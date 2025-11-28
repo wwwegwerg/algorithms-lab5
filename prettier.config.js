@@ -1,6 +1,6 @@
 /**
  * @see https://prettier.io/docs/configuration
- * @type {import("prettier").Config}
+ * @type {import("prettier").Config & import('prettier-plugin-tailwindcss').PluginOptions}
  */
 export default {
   arrowParens: "always",
@@ -13,7 +13,7 @@ export default {
   // tailwindFunctions: ["clsx"],
   plugins: [
     "@ianvs/prettier-plugin-sort-imports",
-    // "prettier-plugin-tailwindcss",
+    "prettier-plugin-tailwindcss",
   ],
   importOrderTypeScriptVersion: "4.4.0",
   importOrderParserPlugins: ["typescript", "jsx"],
@@ -25,5 +25,5 @@ export default {
     "^[../]",
     "^[./]",
   ],
-  //   tailwindConfig: "./src/index.css",
+  tailwindStylesheet: "./src/index.css",
 };

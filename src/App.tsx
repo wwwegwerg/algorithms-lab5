@@ -24,12 +24,13 @@ function App() {
 
   return (
     <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
+      className="bg-red-50    flex flex-col "
+      // style={{
+      //   width: "100vw",
+      //   height: "100vh",
+      //   display: "flex",
+      //   flexDirection: "column",
+      // }}
     >
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         <Sidebar />
