@@ -10,7 +10,7 @@ export default {
   trailingComma: "all",
   tabWidth: 2,
   endOfLine: "lf",
-  // tailwindFunctions: ["clsx"],
+  tailwindFunctions: ["cn"],
   plugins: [
     "@ianvs/prettier-plugin-sort-imports",
     "prettier-plugin-tailwindcss",

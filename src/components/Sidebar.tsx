@@ -1,14 +1,8 @@
 export function Sidebar() {
   return (
-    <div
-      style={{
-        width: "260px",
-        padding: "8px",
-        backgroundColor: "#fafafa",
-      }}
-    >
-      <h3>Алгоритмы</h3>
-      <p style={{ fontSize: "13px", color: "#666" }}>
+    <div className="w-64 bg-neutral-50 p-2">
+      <h3 className="font-semibold">Алгоритмы</h3>
+      <p className="text-sm text-gray-600">
         Здесь позже будут настройки алгоритмов, выбор начальной вершины, список
         шагов и так далее.
       </p>

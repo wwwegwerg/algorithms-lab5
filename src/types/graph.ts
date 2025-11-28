@@ -1,5 +1,7 @@
 export type NodeId = string;
 
+export type EdgeId = string;
+
 export type Node = {
   id: NodeId;
   x: number;
@@ -8,7 +10,7 @@ export type Node = {
 };
 
 export type Edge = {
-  id: string;
+  id: EdgeId;
   from: NodeId;
   to: NodeId;
   weight?: number;

@@ -1,49 +1,62 @@
-import type { EditMode } from "../types/graph";
+import type { ComponentType, SVGProps } from "react";
+import { CirclePlus, MousePointer2, Spline, Trash } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { EditMode } from "@/types/graph";
 
 type ToolbarProps = {
   mode: EditMode;
   onModeChange: (mode: EditMode) => void;
+  className?: string;
 };
 
-export function Toolbar({ mode, onModeChange }: ToolbarProps) {
-  const makeButton = (btnMode: EditMode, label: string) => {
-    const isActive = mode === btnMode;
-    return (
-      <button
-        key={btnMode}
-        onClick={() => onModeChange(btnMode)}
-        style={{
-          marginRight: "8px",
-          padding: "6px 12px",
-          backgroundColor: isActive ? "#1976d2" : "#eee",
-          color: isActive ? "white" : "black",
-          border: "1px solid #ccc",
-          borderRadius: "4px",
-        }}
-      >
-        {label}
-      </button>
-    );
-  };
+const TOOLBAR_BUTTONS: Array<{
+  mode: EditMode;
+  label: string;
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+}> = [
+  { mode: "idle", label: "Выбор", Icon: MousePointer2 },
+  { mode: "add-node", label: "Добавить вершину", Icon: CirclePlus },
+  { mode: "add-edge", label: "Добавить ребро", Icon: Spline },
+  { mode: "delete", label: "Удаление", Icon: Trash },
+];
 
+export function Toolbar({ mode, onModeChange, className = "" }: ToolbarProps) {
   return (
     <div
-      style={{
-        height: "56px",
-        borderTop: "1px solid #ddd",
-        display: "flex",
-        alignItems: "center",
-        padding: "0 12px",
-      }}
+      className={`flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/95 px-4 py-2 text-sm font-medium text-gray-600 shadow-[0_15px_40px_rgba(15,23,42,0.12)] backdrop-blur ${className}`}
     >
-      {makeButton("idle", "Выбор")}
-      {makeButton("add-node", "Добавить вершину")}
-      {makeButton("add-edge", "Добавить ребро")}
-      {makeButton("delete", "Удаление")}
-
-      <div style={{ marginLeft: "auto", fontSize: "12px", color: "#666" }}>
-        Текущий режим: {mode}
-      </div>
+      {TOOLBAR_BUTTONS.map(({ mode: btnMode, label, Icon }) => {
+        const isActive = mode === btnMode;
+        return (
+          <Tooltip key={btnMode}>
+            <TooltipTrigger asChild>
+              <label
+                className={`flex cursor-pointer items-center gap-2 rounded-full px-3 py-1 transition-colors ${
+                  isActive
+                    ? "bg-indigo-100 text-indigo-900"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <input
+                  type="radio"
+                  className="sr-only"
+                  name="toolbar-mode"
+                  value={btnMode}
+                  checked={isActive}
+                  onChange={() => onModeChange(btnMode)}
+                />
+                <Icon className="h-6 w-6" strokeWidth={1.75} />
+                <span className="sr-only">{label}</span>
+              </label>
+            </TooltipTrigger>
+            <TooltipContent>{label}</TooltipContent>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }
