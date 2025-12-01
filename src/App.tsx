@@ -95,6 +95,7 @@ function App() {
       from: edgeStartNodeId,
       to: nodeId,
       isDirected,
+      curvatureOffset: 0,
     };
     setEdges((prev) => [...prev, newEdge]);
     setEdgeStartNodeId(null);
@@ -102,7 +103,8 @@ function App() {
 
   const handleModeChange = (nextMode: EditMode) => {
     setMode(nextMode);
-    const isAddingEdge = mode === "add-edge" || mode === "add-directed-edge";
+    const isAddingEdge =
+      nextMode === "add-edge" || nextMode === "add-directed-edge";
     if (!isAddingEdge) {
       setEdgeStartNodeId(null);
     }
@@ -137,6 +139,19 @@ function App() {
     setEdges((prev) => prev.filter((edge) => edge.id !== edgeId));
   };
 
+  const handleEdgeCurvatureChange = (edgeId: EdgeId, offset: number) => {
+    setEdges((prev) =>
+      prev.map((edge) =>
+        edge.id === edgeId
+          ? {
+              ...edge,
+              curvatureOffset: offset,
+            }
+          : edge,
+      ),
+    );
+  };
+
   return (
     <div className="flex h-screen w-screen flex-col">
       <div className="flex min-h-0 flex-1">
@@ -154,6 +169,7 @@ function App() {
             onNodePositionChange={handleNodePositionChange}
             onNodeDelete={handleNodeDelete}
             onEdgeDelete={handleEdgeDelete}
+            onEdgeCurvatureChange={handleEdgeCurvatureChange}
           />
         </div>
       </div>

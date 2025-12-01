@@ -15,6 +15,7 @@ export type Edge = {
   to: NodeId;
   weight?: number;
   isDirected?: boolean;
+  curvatureOffset: number;
 };
 
 export type EditMode =
@@ -23,4 +24,5 @@ export type EditMode =
   // дальше добавишь новые режимы
   | "add-edge"
   | "add-directed-edge"
+  | "adjust-curvature"
   | "delete";

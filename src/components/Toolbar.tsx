@@ -4,6 +4,7 @@ import {
   MousePointer2,
   MoveUpRight,
   Slash,
+  SplinePointer,
   Trash,
 } from "lucide-react";
 import {
@@ -33,6 +34,11 @@ const TOOLBAR_BUTTONS: Array<{
     mode: "add-directed-edge",
     label: "Добавить направленное ребро",
     Icon: MoveUpRight,
+  },
+  {
+    mode: "adjust-curvature",
+    label: "Настроить кривизну ребер",
+    Icon: SplinePointer,
   },
   { mode: "delete", label: "Удаление вершин / ребер", Icon: Trash },
 ];
