@@ -8,6 +8,7 @@ function App() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [mode, setMode] = useState<EditMode>("idle");
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<NodeId | null>(null);
+  const [nextNodeLabelNumber, setNextNodeLabelNumber] = useState(1);
 
   useEffect(() => {
     console.log("nodes:", nodes);
@@ -16,12 +17,14 @@ function App() {
 
   const handleCanvasClick = (x: number, y: number) => {
     if (mode !== "add-node") return;
-    const id = `${nodes.length + 1}`;
+    const id = crypto.randomUUID();
+    const labelNumber = nextNodeLabelNumber;
+    setNextNodeLabelNumber((prev) => prev + 1);
     const newNode: Node = {
       id,
       x,
       y,
-      label: "V" + id,
+      label: `V${labelNumber}`,
     };
     setNodes((prev) => [...prev, newNode]);
   };
@@ -40,7 +43,7 @@ function App() {
       return;
     }
 
-    const id = `${edges.length + 1}`;
+    const id = crypto.randomUUID();
     const newEdge: Edge = {
       id,
       from: edgeStartNodeId,
