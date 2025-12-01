@@ -15,6 +15,45 @@ function App() {
     console.log("edges", edges);
   }, [nodes, edges]);
 
+  const canAddEdge = (
+    from: NodeId,
+    to: NodeId,
+    isDirected: boolean,
+  ): boolean => {
+    const pairEdges = edges.filter(
+      (edge) =>
+        (edge.from === from && edge.to === to) ||
+        (edge.from === to && edge.to === from),
+    );
+    const hasUndirectedEdge = pairEdges.some((edge) => !edge.isDirected);
+    const hasDirectedEdge = pairEdges.some((edge) => edge.isDirected);
+
+    if (isDirected) {
+      if (hasUndirectedEdge) {
+        console.warn("Нельзя смешивать направленные и ненаправленные ребра.");
+        return false;
+      }
+      const sameDirectionExists = pairEdges.some(
+        (edge) => edge.isDirected && edge.from === from && edge.to === to,
+      );
+      if (sameDirectionExists) {
+        console.warn("Такое направленное ребро уже существует.");
+        return false;
+      }
+      return true;
+    }
+
+    if (hasDirectedEdge) {
+      console.warn("Нельзя смешивать направленные и ненаправленные ребра.");
+      return false;
+    }
+    if (hasUndirectedEdge) {
+      console.warn("Нельзя добавить два ненаправленных ребра между вершинами.");
+      return false;
+    }
+    return true;
+  };
+
   const handleCanvasClick = (x: number, y: number) => {
     if (mode !== "add-node") return;
     const id = crypto.randomUUID();
@@ -43,12 +82,17 @@ function App() {
       return;
     }
 
+    const isDirected = mode === "add-directed-edge";
+    if (!canAddEdge(edgeStartNodeId, nodeId, isDirected)) {
+      setEdgeStartNodeId(null);
+      return;
+    }
     const id = crypto.randomUUID();
     const newEdge: Edge = {
       id,
       from: edgeStartNodeId,
       to: nodeId,
-      isDirected: mode === "add-directed-edge",
+      isDirected,
     };
     setEdges((prev) => [...prev, newEdge]);
     setEdgeStartNodeId(null);
