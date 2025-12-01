@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GraphCanvas } from "@/components/GraphCanvas";
 import { Sidebar } from "@/components/Sidebar";
+import { snapPointToGrid } from "@/lib/grid";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
 function App() {
@@ -56,13 +57,14 @@ function App() {
 
   const handleCanvasClick = (x: number, y: number) => {
     if (mode !== "add-node") return;
+    const { x: snappedX, y: snappedY } = snapPointToGrid(x, y);
     const id = crypto.randomUUID();
     const labelNumber = nextNodeLabelNumber;
     setNextNodeLabelNumber((prev) => prev + 1);
     const newNode: Node = {
       id,
-      x,
-      y,
+      x: snappedX,
+      y: snappedY,
       label: `V${labelNumber}`,
     };
     setNodes((prev) => [...prev, newNode]);
@@ -107,13 +109,14 @@ function App() {
   };
 
   const handleNodePositionChange = (nodeId: NodeId, x: number, y: number) => {
+    const { x: snappedX, y: snappedY } = snapPointToGrid(x, y);
     setNodes((prev) =>
       prev.map((node) =>
         node.id === nodeId
           ? {
               ...node,
-              x,
-              y,
+              x: snappedX,
+              y: snappedY,
             }
           : node,
       ),

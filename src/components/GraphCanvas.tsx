@@ -1,6 +1,7 @@
 import React, { useId, useRef } from "react";
 import { Toolbar } from "@/components/Toolbar";
 import { GRAPH_STYLE } from "@/constants/graph";
+import { GRID_SIZE } from "@/lib/grid";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
 type GraphCanvasProps = {
@@ -59,7 +60,9 @@ export function GraphCanvas({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const draggingNodeIdRef = useRef<NodeId | null>(null);
   const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
-  const arrowMarkerId = useId().replace(/:/g, "");
+  const uniqueId = useId().replace(/:/g, "");
+  const arrowMarkerId = `${uniqueId}-arrow`;
+  const gridPatternId = `${uniqueId}-grid`;
 
   const handleSvgClick = (
     event: React.MouseEvent<SVGSVGElement, MouseEvent>,
@@ -168,6 +171,20 @@ export function GraphCanvas({
         className={`h-full w-full bg-neutral-100 ${mode === "add-node" ? "cursor-crosshair" : "cursor-default"}`}
       >
         <defs>
+          <pattern
+            id={gridPatternId}
+            width={GRID_SIZE}
+            height={GRID_SIZE}
+            patternUnits="userSpaceOnUse"
+          >
+            <rect width={GRID_SIZE} height={GRID_SIZE} fill="#f5f5f5" />
+            <path
+              d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+              fill="none"
+              stroke="#d4d4d8"
+              strokeWidth={1}
+            />
+          </pattern>
           <marker
             id={arrowMarkerId}
             markerWidth={GRAPH_STYLE.arrowMarker.width}
@@ -180,6 +197,11 @@ export function GraphCanvas({
             <path d={GRAPH_STYLE.arrowMarker.path} fill="black" />
           </marker>
         </defs>
+        <rect
+          width="100%"
+          height="100%"
+          fill={`url(#${gridPatternId})`}
+        />
         {edges.map((edge) => {
           const from = nodes.find((n) => n.id === edge.from);
           const to = nodes.find((n) => n.id === edge.to);
