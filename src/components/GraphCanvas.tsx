@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { Toolbar } from "@/components/Toolbar";
-import type { Edge, EditMode, EdgeId, Node, NodeId } from "@/types/graph";
+import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
 type GraphCanvasProps = {
   nodes: Node[];

@@ -1,11 +1,13 @@
 import type { ComponentType, SVGProps } from "react";
-import { CirclePlus, MousePointer2, Spline, Trash } from "lucide-react";
+import { CirclePlus, MousePointer2, Slash, Trash } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { EditMode } from "@/types/graph";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 
 type ToolbarProps = {
   mode: EditMode;
@@ -20,43 +22,39 @@ const TOOLBAR_BUTTONS: Array<{
 }> = [
   { mode: "idle", label: "Выбор", Icon: MousePointer2 },
   { mode: "add-node", label: "Добавить вершину", Icon: CirclePlus },
-  { mode: "add-edge", label: "Добавить ребро", Icon: Spline },
-  { mode: "delete", label: "Удаление", Icon: Trash },
+  { mode: "add-edge", label: "Добавить ребро", Icon: Slash },
+  { mode: "delete", label: "Удаление вершин / ребер", Icon: Trash },
 ];
 
 export function Toolbar({ mode, onModeChange, className = "" }: ToolbarProps) {
   return (
-    <div
-      className={`flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/95 px-4 py-2 text-sm font-medium text-gray-600 shadow-[0_15px_40px_rgba(15,23,42,0.12)] backdrop-blur ${className}`}
+    <ToggleGroup
+      type="single"
+      value={mode}
+      className={cn(className, "bg-white/95")}
+      variant="outline"
+      size="lg"
     >
       {TOOLBAR_BUTTONS.map(({ mode: btnMode, label, Icon }) => {
-        const isActive = mode === btnMode;
         return (
-          <Tooltip key={btnMode}>
-            <TooltipTrigger asChild>
-              <label
-                className={`flex cursor-pointer items-center gap-2 rounded-full px-3 py-1 transition-colors ${
-                  isActive
-                    ? "bg-indigo-100 text-indigo-900"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <input
-                  type="radio"
-                  className="sr-only"
-                  name="toolbar-mode"
-                  value={btnMode}
-                  checked={isActive}
-                  onChange={() => onModeChange(btnMode)}
-                />
-                <Icon className="h-6 w-6" strokeWidth={1.75} />
-                <span className="sr-only">{label}</span>
-              </label>
-            </TooltipTrigger>
-            <TooltipContent>{label}</TooltipContent>
-          </Tooltip>
+          <ToggleGroupItem
+            key={btnMode}
+            value={btnMode}
+            className="cursor-pointer px-0"
+            aria-label={label}
+            onClick={() => onModeChange(btnMode)}
+          >
+            <Tooltip key={btnMode}>
+              <TooltipTrigger asChild>
+                <span className="flex h-full w-full items-center justify-center px-3">
+                  <Icon strokeWidth={1.75} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          </ToggleGroupItem>
         );
       })}
-    </div>
+    </ToggleGroup>
   );
 }

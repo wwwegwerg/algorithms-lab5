@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GraphCanvas } from "@/components/GraphCanvas";
 import { Sidebar } from "@/components/Sidebar";
-import type { Edge, EditMode, EdgeId, Node, NodeId } from "@/types/graph";
+import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
 function App() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [mode, setMode] = useState<EditMode>("idle");
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<NodeId | null>(null);
+
+  useEffect(() => {
+    console.log("nodes:", nodes);
+    console.log("edges", edges);
+  }, [nodes, edges]);
 
   const handleCanvasClick = (x: number, y: number) => {
     if (mode !== "add-node") return;
@@ -83,6 +88,7 @@ function App() {
     <div className="flex h-screen w-screen flex-col">
       <div className="flex min-h-0 flex-1">
         <Sidebar />
+
         <div className="flex-1 border-l border-gray-300">
           <GraphCanvas
             nodes={nodes}
