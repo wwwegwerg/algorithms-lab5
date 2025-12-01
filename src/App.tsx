@@ -27,7 +27,8 @@ function App() {
   };
 
   const handleNodeClick = (nodeId: NodeId) => {
-    if (mode !== "add-edge") return;
+    const isAddingEdge = mode === "add-edge" || mode === "add-directed-edge";
+    if (!isAddingEdge) return;
 
     if (!edgeStartNodeId) {
       setEdgeStartNodeId(nodeId);
@@ -44,6 +45,7 @@ function App() {
       id,
       from: edgeStartNodeId,
       to: nodeId,
+      isDirected: mode === "add-directed-edge",
     };
     setEdges((prev) => [...prev, newEdge]);
     setEdgeStartNodeId(null);
@@ -51,7 +53,8 @@ function App() {
 
   const handleModeChange = (nextMode: EditMode) => {
     setMode(nextMode);
-    if (nextMode !== "add-edge") {
+    const isAddingEdge = mode === "add-edge" || mode === "add-directed-edge";
+    if (!isAddingEdge) {
       setEdgeStartNodeId(null);
     }
   };

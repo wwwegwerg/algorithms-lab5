@@ -14,6 +14,7 @@ export type Edge = {
   from: NodeId;
   to: NodeId;
   weight?: number;
+  isDirected?: boolean;
 };
 
 export type EditMode =
@@ -21,4 +22,5 @@ export type EditMode =
   | "add-node"
   // дальше добавишь новые режимы
   | "add-edge"
+  | "add-directed-edge"
   | "delete";

@@ -1,5 +1,11 @@
 import type { ComponentType, SVGProps } from "react";
-import { CirclePlus, MousePointer2, Slash, Trash } from "lucide-react";
+import {
+  CirclePlus,
+  MousePointer2,
+  MoveUpRight,
+  Slash,
+  Trash,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -23,6 +29,11 @@ const TOOLBAR_BUTTONS: Array<{
   { mode: "idle", label: "Выбор", Icon: MousePointer2 },
   { mode: "add-node", label: "Добавить вершину", Icon: CirclePlus },
   { mode: "add-edge", label: "Добавить ребро", Icon: Slash },
+  {
+    mode: "add-directed-edge",
+    label: "Добавить направленное ребро",
+    Icon: MoveUpRight,
+  },
   { mode: "delete", label: "Удаление вершин / ребер", Icon: Trash },
 ];
 

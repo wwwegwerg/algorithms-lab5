@@ -1,5 +1,6 @@
-import React, { useRef } from "react";
+import React, { useId, useRef } from "react";
 import { Toolbar } from "@/components/Toolbar";
+import { GRAPH_STYLE } from "@/constants/graph";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
 type GraphCanvasProps = {
@@ -13,6 +14,34 @@ type GraphCanvasProps = {
   onNodePositionChange: (nodeId: NodeId, x: number, y: number) => void;
   onNodeDelete: (nodeId: NodeId) => void;
   onEdgeDelete: (edgeId: EdgeId) => void;
+};
+
+const selectionRingRadius =
+  GRAPH_STYLE.nodeRadius + GRAPH_STYLE.selectionRingOffset;
+
+const computeEdgeEndpoints = (from: Node, to: Node, isDirected: boolean) => {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const distance = Math.hypot(dx, dy);
+
+  if (distance === 0) {
+    return { startX: from.x, startY: from.y, endX: to.x, endY: to.y };
+  }
+
+  const unitX = dx / distance;
+  const unitY = dy / distance;
+  const startInset = Math.min(GRAPH_STYLE.nodeRadius, distance / 2);
+  const desiredEndInset = isDirected
+    ? GRAPH_STYLE.nodeRadius + GRAPH_STYLE.arrowClearance
+    : GRAPH_STYLE.nodeRadius;
+  const endInset = Math.min(desiredEndInset, Math.max(distance - startInset, 0));
+
+  return {
+    startX: from.x + unitX * startInset,
+    startY: from.y + unitY * startInset,
+    endX: to.x - unitX * endInset,
+    endY: to.y - unitY * endInset,
+  };
 };
 
 export function GraphCanvas({
@@ -30,6 +59,7 @@ export function GraphCanvas({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const draggingNodeIdRef = useRef<NodeId | null>(null);
   const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const arrowMarkerId = useId().replace(/:/g, "");
 
   const handleSvgClick = (
     event: React.MouseEvent<SVGSVGElement, MouseEvent>,
@@ -48,7 +78,8 @@ export function GraphCanvas({
     nodeId: NodeId,
   ) => {
     event.stopPropagation();
-    if (mode === "add-edge") {
+    const isAddingEdge = mode === "add-edge" || mode === "add-directed-edge";
+    if (isAddingEdge) {
       onNodeClick(nodeId);
       return;
     }
@@ -136,22 +167,45 @@ export function GraphCanvas({
         onMouseLeave={handleMouseLeave}
         className={`h-full w-full bg-neutral-100 ${mode === "add-node" ? "cursor-crosshair" : "cursor-default"}`}
       >
+        <defs>
+          <marker
+            id={arrowMarkerId}
+            markerWidth={GRAPH_STYLE.arrowMarker.width}
+            markerHeight={GRAPH_STYLE.arrowMarker.height}
+            refX={GRAPH_STYLE.arrowMarker.refX}
+            refY={GRAPH_STYLE.arrowMarker.refY}
+            orient="auto"
+            markerUnits="strokeWidth"
+          >
+            <path d={GRAPH_STYLE.arrowMarker.path} fill="black" />
+          </marker>
+        </defs>
         {edges.map((edge) => {
           const from = nodes.find((n) => n.id === edge.from);
           const to = nodes.find((n) => n.id === edge.to);
           if (!from || !to) return null;
+          const { startX, startY, endX, endY } = computeEdgeEndpoints(
+            from,
+            to,
+            Boolean(edge.isDirected),
+          );
 
           return (
             <line
               key={edge.id}
-              x1={from.x}
-              y1={from.y}
-              x2={to.x}
-              y2={to.y}
+              x1={startX}
+              y1={startY}
+              x2={endX}
+              y2={endY}
               stroke="black"
-              strokeWidth={mode === "delete" ? 4 : 2}
+              strokeWidth={
+                mode === "delete"
+                  ? GRAPH_STYLE.edgeStrokeWidth.delete
+                  : GRAPH_STYLE.edgeStrokeWidth.default
+              }
               className={mode === "delete" ? "cursor-pointer" : ""}
               onClick={(event) => handleEdgeClick(event, edge.id)}
+              markerEnd={edge.isDirected ? `url(#${arrowMarkerId})` : undefined}
             />
           );
         })}
@@ -171,7 +225,7 @@ export function GraphCanvas({
               <circle
                 cx={node.x}
                 cy={node.y}
-                r={26}
+                r={selectionRingRadius}
                 fill="none"
                 stroke="#4f46e5"
                 strokeWidth={2}
@@ -181,7 +235,7 @@ export function GraphCanvas({
             <circle
               cx={node.x}
               cy={node.y}
-              r={20}
+              r={GRAPH_STYLE.nodeRadius}
               fill="white"
               stroke="black"
               strokeWidth={edgeStartNodeId === node.id ? 3 : 1}
@@ -191,7 +245,7 @@ export function GraphCanvas({
               y={node.y}
               textAnchor="middle"
               dy="0.35em"
-              fontSize="12"
+              fontSize={12}
             >
               {node.label}
             </text>

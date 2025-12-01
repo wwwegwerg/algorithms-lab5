@@ -1,0 +1,16 @@
+export const GRAPH_STYLE = {
+  nodeRadius: 20,
+  selectionRingOffset: 6,
+  arrowClearance: 4,
+  edgeStrokeWidth: {
+    default: 2,
+    delete: 4,
+  },
+  arrowMarker: {
+    width: 12,
+    height: 12,
+    refX: 10,
+    refY: 6,
+    path: "M0,0 L12,6 L0,12 z",
+  },
+} as const;
