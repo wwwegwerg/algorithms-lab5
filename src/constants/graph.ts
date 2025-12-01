@@ -6,6 +6,13 @@ export const GRAPH_STYLE = {
     default: 2,
     delete: 4,
   },
+  deleteHighlight: {
+    color: "#0f766e",
+    nodeStrokeWidth: 4,
+    nodeRadiusOffset: 4,
+    edgeStrokeWidth: 6,
+    arrowScale: 2.6,
+  },
   arrowMarker: {
     width: 12,
     height: 12,

@@ -1,9 +1,23 @@
-import React, { useEffect, useId, useRef } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Toolbar } from "@/components/Toolbar";
 import { GRAPH_STYLE, SELECTION_RING_RADIUS } from "@/constants/graph";
 import { GRID_CONFIG } from "@/constants/grid";
+import {
+  clamp,
+  findTrimParameterFromEnd,
+  findTrimParameterFromStart,
+  splitQuadratic,
+} from "@/lib/bezier";
 import { snapToGrid } from "@/lib/grid";
+import { cn } from "@/lib/utils";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
+
+const HIGHLIGHT_ARROW_SCALE = GRAPH_STYLE.deleteHighlight.arrowScale;
+const ARROW_MARKER_CENTER = { x: 7.5, y: 6 };
+const HIGHLIGHT_ARROW_TRANSFORM =
+  HIGHLIGHT_ARROW_SCALE === 1
+    ? undefined
+    : `translate(${ARROW_MARKER_CENTER.x} ${ARROW_MARKER_CENTER.y}) scale(${HIGHLIGHT_ARROW_SCALE}) translate(-${ARROW_MARKER_CENTER.x} -${ARROW_MARKER_CENTER.y})`;
 
 type GraphCanvasProps = {
   nodes: Node[];
@@ -17,91 +31,6 @@ type GraphCanvasProps = {
   onNodeDelete: (nodeId: NodeId) => void;
   onEdgeDelete: (edgeId: EdgeId) => void;
   onEdgeCurvatureChange: (edgeId: EdgeId, offset: number) => void;
-};
-
-type Point = { x: number; y: number };
-
-const evaluateQuadraticPoint = (p0: Point, p1: Point, p2: Point, t: number) => {
-  const oneMinusT = 1 - t;
-  const x =
-    oneMinusT * oneMinusT * p0.x + 2 * oneMinusT * t * p1.x + t * t * p2.x;
-  const y =
-    oneMinusT * oneMinusT * p0.y + 2 * oneMinusT * t * p1.y + t * t * p2.y;
-  return { x, y };
-};
-
-const splitQuadratic = (p0: Point, p1: Point, p2: Point, t: number) => {
-  const p01 = {
-    x: p0.x + (p1.x - p0.x) * t,
-    y: p0.y + (p1.y - p0.y) * t,
-  };
-  const p12 = {
-    x: p1.x + (p2.x - p1.x) * t,
-    y: p1.y + (p2.y - p1.y) * t,
-  };
-  const p012 = {
-    x: p01.x + (p12.x - p01.x) * t,
-    y: p01.y + (p12.y - p01.y) * t,
-  };
-  return {
-    left: { p0, p1: p01, p2: p012 },
-    right: { p0: p012, p1: p12, p2 },
-  };
-};
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, value));
-
-const findTrimParameterFromStart = (
-  p0: Point,
-  p1: Point,
-  p2: Point,
-  reference: Point,
-  distance: number,
-): number => {
-  if (distance <= 0) return 0;
-  let left = 0;
-  let right = 1;
-  for (let i = 0; i < 30; i += 1) {
-    const mid = (left + right) / 2;
-    const point = evaluateQuadraticPoint(p0, p1, p2, mid);
-    const currentDistance = Math.hypot(
-      point.x - reference.x,
-      point.y - reference.y,
-    );
-    if (currentDistance < distance) {
-      left = mid;
-    } else {
-      right = mid;
-    }
-  }
-  return right;
-};
-
-const findTrimParameterFromEnd = (
-  p0: Point,
-  p1: Point,
-  p2: Point,
-  reference: Point,
-  distance: number,
-): number => {
-  if (distance <= 0) return 1;
-  let left = 0;
-  let right = 1;
-  for (let i = 0; i < 30; i += 1) {
-    const mid = (left + right) / 2;
-    const point = evaluateQuadraticPoint(p0, p1, p2, mid);
-    const currentDistance = Math.hypot(
-      point.x - reference.x,
-      point.y - reference.y,
-    );
-    if (currentDistance < distance) {
-      right = mid;
-    } else {
-      left = mid;
-    }
-  }
-  return left;
 };
 
 export function GraphCanvas({
@@ -125,9 +54,17 @@ export function GraphCanvas({
     axisOrigin: { x: number; y: number };
     axisDirection: { x: number; y: number };
   } | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<NodeId | null>(null);
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<EdgeId | null>(null);
   const uniqueId = useId().replace(/:/g, "");
   const arrowMarkerId = `${uniqueId}-arrow`;
+  const arrowHighlightMarkerId = `${uniqueId}-arrow-highlight`;
   const gridPatternId = `${uniqueId}-grid`;
+
+  const clearHoverState = useCallback(() => {
+    setHoveredNodeId(null);
+    setHoveredEdgeId(null);
+  }, []);
 
   useEffect(() => {
     if (mode !== "adjust-curvature" && draggingCurvatureRef.current) {
@@ -162,6 +99,14 @@ export function GraphCanvas({
     }
   };
 
+  const handleNodeMouseEnter = (nodeId: NodeId) => {
+    setHoveredNodeId(nodeId);
+  };
+
+  const handleNodeMouseLeave = (nodeId: NodeId) => {
+    setHoveredNodeId((current) => (current === nodeId ? null : current));
+  };
+
   const handleEdgeClick = (
     event: React.MouseEvent<SVGPathElement, MouseEvent>,
     edgeId: EdgeId,
@@ -169,6 +114,14 @@ export function GraphCanvas({
     if (mode !== "delete") return;
     event.stopPropagation();
     onEdgeDelete(edgeId);
+  };
+
+  const handleEdgeMouseEnter = (edgeId: EdgeId) => {
+    setHoveredEdgeId(edgeId);
+  };
+
+  const handleEdgeMouseLeave = (edgeId: EdgeId) => {
+    setHoveredEdgeId((current) => (current === edgeId ? null : current));
   };
 
   const handleNodeMouseDown = (
@@ -262,6 +215,7 @@ export function GraphCanvas({
   };
 
   const handleMouseLeave = () => {
+    clearHoverState();
     if (draggingNodeIdRef.current) {
       stopDraggingNode();
     }
@@ -288,8 +242,6 @@ export function GraphCanvas({
     };
   };
 
-  const isCurvatureMode = mode === "adjust-curvature";
-
   return (
     <div className="relative h-full w-full">
       <svg
@@ -300,7 +252,10 @@ export function GraphCanvas({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        className={`h-full w-full bg-neutral-100 ${mode === "add-node" ? "cursor-crosshair" : "cursor-default"}`}
+        className={cn(
+          "h-full w-full bg-neutral-100",
+          mode === "add-node" ? "cursor-crosshair" : "cursor-default",
+        )}
       >
         <defs>
           <pattern
@@ -329,8 +284,26 @@ export function GraphCanvas({
             refY={GRAPH_STYLE.arrowMarker.refY}
             orient="auto"
             markerUnits="strokeWidth"
+            viewBox={`0 0 ${GRAPH_STYLE.arrowMarker.width} ${GRAPH_STYLE.arrowMarker.height}`}
           >
             <path d={GRAPH_STYLE.arrowMarker.path} fill="black" />
+          </marker>
+          <marker
+            id={arrowHighlightMarkerId}
+            markerWidth={GRAPH_STYLE.arrowMarker.width}
+            markerHeight={GRAPH_STYLE.arrowMarker.height}
+            refX={GRAPH_STYLE.arrowMarker.refX}
+            refY={GRAPH_STYLE.arrowMarker.refY}
+            orient="auto"
+            markerUnits="userSpaceOnUse"
+            overflow="visible"
+            viewBox={`0 0 ${GRAPH_STYLE.arrowMarker.width} ${GRAPH_STYLE.arrowMarker.height}`}
+          >
+            <path
+              d={GRAPH_STYLE.arrowMarker.path}
+              fill={GRAPH_STYLE.deleteHighlight.color}
+              transform={HIGHLIGHT_ARROW_TRANSFORM}
+            />
           </marker>
         </defs>
         <rect width="100%" height="100%" fill={`url(#${gridPatternId})`} />
@@ -352,7 +325,7 @@ export function GraphCanvas({
             x: (fromPoint.x + toPoint.x) / 2,
             y: (fromPoint.y + toPoint.y) / 2,
           };
-          const offset = edge.curvatureOffset ?? 0;
+          const offset = edge.curvatureOffset;
           const vertexX = axisOrigin.x + normalX * offset;
           const vertexY = axisOrigin.y + normalY * offset;
           const controlX = 2 * vertexX - axisOrigin.x;
@@ -413,25 +386,41 @@ export function GraphCanvas({
           const endX = trimmedCurve.p2.x;
           const endY = trimmedCurve.p2.y;
           const pathD = `M ${startX} ${startY} Q ${controlTrimmedX} ${controlTrimmedY} ${endX} ${endY}`;
+          const isEdgeHighlighted =
+            mode === "delete" && hoveredEdgeId === edge.id;
 
           return (
             <g key={edge.id}>
+              {isEdgeHighlighted ? (
+                <path
+                  d={pathD}
+                  stroke={GRAPH_STYLE.deleteHighlight.color}
+                  fill="none"
+                  strokeWidth={GRAPH_STYLE.deleteHighlight.edgeStrokeWidth}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  pointerEvents="none"
+                  markerEnd={
+                    edge.isDirected
+                      ? `url(#${arrowHighlightMarkerId})`
+                      : undefined
+                  }
+                />
+              ) : null}
               <path
                 d={pathD}
                 stroke="black"
                 fill="none"
-                strokeWidth={
-                  mode === "delete"
-                    ? GRAPH_STYLE.edgeStrokeWidth.delete
-                    : GRAPH_STYLE.edgeStrokeWidth.default
-                }
-                className={mode === "delete" ? "cursor-pointer" : ""}
+                strokeWidth={GRAPH_STYLE.edgeStrokeWidth.default}
+                className={cn(mode === "delete" && "cursor-pointer")}
                 onClick={(event) => handleEdgeClick(event, edge.id)}
+                onMouseEnter={() => handleEdgeMouseEnter(edge.id)}
+                onMouseLeave={() => handleEdgeMouseLeave(edge.id)}
                 markerEnd={
                   edge.isDirected ? `url(#${arrowMarkerId})` : undefined
                 }
               />
-              {isCurvatureMode ? (
+              {mode === "adjust-curvature" ? (
                 <>
                   <line
                     x1={axisOrigin.x}
@@ -470,12 +459,28 @@ export function GraphCanvas({
             key={node.id}
             onClick={(event) => handleNodeClick(event, node.id)}
             onMouseDown={(event) => handleNodeMouseDown(event, node)}
+            onMouseEnter={() => handleNodeMouseEnter(node.id)}
+            onMouseLeave={() => handleNodeMouseLeave(node.id)}
             className={
               mode === "idle"
                 ? "cursor-grab active:cursor-grabbing"
                 : "cursor-pointer"
             }
           >
+            {mode === "delete" && hoveredNodeId === node.id ? (
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={
+                  GRAPH_STYLE.nodeRadius +
+                  GRAPH_STYLE.deleteHighlight.nodeRadiusOffset
+                }
+                fill="none"
+                stroke={GRAPH_STYLE.deleteHighlight.color}
+                strokeWidth={GRAPH_STYLE.deleteHighlight.nodeStrokeWidth}
+                pointerEvents="none"
+              />
+            ) : null}
             {edgeStartNodeId === node.id ? (
               <circle
                 cx={node.x}

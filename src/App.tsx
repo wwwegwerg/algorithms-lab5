@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { GraphCanvas } from "@/components/GraphCanvas";
 import { Sidebar } from "@/components/Sidebar";
+import { validateEdgeConnection } from "@/lib/edges";
 import { snapPointToGrid } from "@/lib/grid";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
+
+const isEdgeCreationMode = (mode: EditMode) =>
+  mode === "add-edge" || mode === "add-directed-edge";
+
+const isDirectedMode = (mode: EditMode) => mode === "add-directed-edge";
 
 function App() {
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -10,50 +16,6 @@ function App() {
   const [mode, setMode] = useState<EditMode>("idle");
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<NodeId | null>(null);
   const [nextNodeLabelNumber, setNextNodeLabelNumber] = useState(1);
-
-  useEffect(() => {
-    console.log("nodes:", nodes);
-    console.log("edges", edges);
-  }, [nodes, edges]);
-
-  const canAddEdge = (
-    from: NodeId,
-    to: NodeId,
-    isDirected: boolean,
-  ): boolean => {
-    const pairEdges = edges.filter(
-      (edge) =>
-        (edge.from === from && edge.to === to) ||
-        (edge.from === to && edge.to === from),
-    );
-    const hasUndirectedEdge = pairEdges.some((edge) => !edge.isDirected);
-    const hasDirectedEdge = pairEdges.some((edge) => edge.isDirected);
-
-    if (isDirected) {
-      if (hasUndirectedEdge) {
-        console.warn("Нельзя смешивать направленные и ненаправленные ребра.");
-        return false;
-      }
-      const sameDirectionExists = pairEdges.some(
-        (edge) => edge.isDirected && edge.from === from && edge.to === to,
-      );
-      if (sameDirectionExists) {
-        console.warn("Такое направленное ребро уже существует.");
-        return false;
-      }
-      return true;
-    }
-
-    if (hasDirectedEdge) {
-      console.warn("Нельзя смешивать направленные и ненаправленные ребра.");
-      return false;
-    }
-    if (hasUndirectedEdge) {
-      console.warn("Нельзя добавить два ненаправленных ребра между вершинами.");
-      return false;
-    }
-    return true;
-  };
 
   const handleCanvasClick = (x: number, y: number) => {
     if (mode !== "add-node") return;
@@ -71,8 +33,7 @@ function App() {
   };
 
   const handleNodeClick = (nodeId: NodeId) => {
-    const isAddingEdge = mode === "add-edge" || mode === "add-directed-edge";
-    if (!isAddingEdge) return;
+    if (!isEdgeCreationMode(mode)) return;
 
     if (!edgeStartNodeId) {
       setEdgeStartNodeId(nodeId);
@@ -84,8 +45,17 @@ function App() {
       return;
     }
 
-    const isDirected = mode === "add-directed-edge";
-    if (!canAddEdge(edgeStartNodeId, nodeId, isDirected)) {
+    const isDirected = isDirectedMode(mode);
+    const validation = validateEdgeConnection(
+      edges,
+      edgeStartNodeId,
+      nodeId,
+      isDirected,
+    );
+    if (!validation.isValid) {
+      if (validation.message) {
+        console.warn(validation.message);
+      }
       setEdgeStartNodeId(null);
       return;
     }
@@ -103,9 +73,7 @@ function App() {
 
   const handleModeChange = (nextMode: EditMode) => {
     setMode(nextMode);
-    const isAddingEdge =
-      nextMode === "add-edge" || nextMode === "add-directed-edge";
-    if (!isAddingEdge) {
+    if (!isEdgeCreationMode(nextMode)) {
       setEdgeStartNodeId(null);
     }
   };

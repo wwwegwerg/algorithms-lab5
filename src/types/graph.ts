@@ -14,7 +14,7 @@ export type Edge = {
   from: NodeId;
   to: NodeId;
   weight?: number;
-  isDirected?: boolean;
+  isDirected: boolean;
   curvatureOffset: number;
 };
 

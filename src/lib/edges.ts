@@ -1,34 +1,52 @@
-import { GRAPH_STYLE } from "@/constants/graph";
-import type { Node } from "@/types/graph";
+import type { Edge, NodeId } from "@/types/graph";
 
-export const computeEdgeEndpoints = (
-  from: Node,
-  to: Node,
-  isDirected: boolean,
-) => {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const distance = Math.hypot(dx, dy);
+type EdgeValidationResult = {
+  isValid: boolean;
+  message?: string;
+};
 
-  if (distance === 0) {
-    return { startX: from.x, startY: from.y, endX: to.x, endY: to.y };
-  }
+const MIXED_EDGE_WARNING =
+  "Нельзя смешивать направленные и ненаправленные ребра.";
+const DUPLICATE_DIRECTED_WARNING = "Такое направленное ребро уже существует.";
+const DUPLICATE_UNDIRECTED_WARNING =
+  "Нельзя добавить два ненаправленных ребра между вершинами.";
 
-  const unitX = dx / distance;
-  const unitY = dy / distance;
-  const startInset = Math.min(GRAPH_STYLE.nodeRadius, distance / 2);
-  const desiredEndInset = isDirected
-    ? GRAPH_STYLE.nodeRadius + GRAPH_STYLE.arrowClearance
-    : GRAPH_STYLE.nodeRadius;
-  const endInset = Math.min(
-    desiredEndInset,
-    Math.max(distance - startInset, 0),
+const getPairEdges = (edges: Edge[], from: NodeId, to: NodeId) =>
+  edges.filter(
+    (edge) =>
+      (edge.from === from && edge.to === to) ||
+      (edge.from === to && edge.to === from),
   );
 
-  return {
-    startX: from.x + unitX * startInset,
-    startY: from.y + unitY * startInset,
-    endX: to.x - unitX * endInset,
-    endY: to.y - unitY * endInset,
-  };
+export const validateEdgeConnection = (
+  edges: Edge[],
+  from: NodeId,
+  to: NodeId,
+  isDirected: boolean,
+): EdgeValidationResult => {
+  const pairEdges = getPairEdges(edges, from, to);
+  const hasUndirectedEdge = pairEdges.some((edge) => !edge.isDirected);
+  const hasDirectedEdge = pairEdges.some((edge) => edge.isDirected);
+
+  if (isDirected) {
+    if (hasUndirectedEdge) {
+      return { isValid: false, message: MIXED_EDGE_WARNING };
+    }
+    const sameDirectionExists = pairEdges.some(
+      (edge) => edge.isDirected && edge.from === from && edge.to === to,
+    );
+    if (sameDirectionExists) {
+      return { isValid: false, message: DUPLICATE_DIRECTED_WARNING };
+    }
+    return { isValid: true };
+  }
+
+  if (hasDirectedEdge) {
+    return { isValid: false, message: MIXED_EDGE_WARNING };
+  }
+  if (hasUndirectedEdge) {
+    return { isValid: false, message: DUPLICATE_UNDIRECTED_WARNING };
+  }
+
+  return { isValid: true };
 };
