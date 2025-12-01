@@ -1,7 +1,8 @@
 import React, { useId, useRef } from "react";
 import { Toolbar } from "@/components/Toolbar";
-import { GRAPH_STYLE } from "@/constants/graph";
-import { GRID_SIZE } from "@/lib/grid";
+import { GRAPH_STYLE, SELECTION_RING_RADIUS } from "@/constants/graph";
+import { GRID_CONFIG } from "@/constants/grid";
+import { computeEdgeEndpoints } from "@/lib/edges";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
 type GraphCanvasProps = {
@@ -15,34 +16,6 @@ type GraphCanvasProps = {
   onNodePositionChange: (nodeId: NodeId, x: number, y: number) => void;
   onNodeDelete: (nodeId: NodeId) => void;
   onEdgeDelete: (edgeId: EdgeId) => void;
-};
-
-const selectionRingRadius =
-  GRAPH_STYLE.nodeRadius + GRAPH_STYLE.selectionRingOffset;
-
-const computeEdgeEndpoints = (from: Node, to: Node, isDirected: boolean) => {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const distance = Math.hypot(dx, dy);
-
-  if (distance === 0) {
-    return { startX: from.x, startY: from.y, endX: to.x, endY: to.y };
-  }
-
-  const unitX = dx / distance;
-  const unitY = dy / distance;
-  const startInset = Math.min(GRAPH_STYLE.nodeRadius, distance / 2);
-  const desiredEndInset = isDirected
-    ? GRAPH_STYLE.nodeRadius + GRAPH_STYLE.arrowClearance
-    : GRAPH_STYLE.nodeRadius;
-  const endInset = Math.min(desiredEndInset, Math.max(distance - startInset, 0));
-
-  return {
-    startX: from.x + unitX * startInset,
-    startY: from.y + unitY * startInset,
-    endX: to.x - unitX * endInset,
-    endY: to.y - unitY * endInset,
-  };
 };
 
 export function GraphCanvas({
@@ -173,16 +146,20 @@ export function GraphCanvas({
         <defs>
           <pattern
             id={gridPatternId}
-            width={GRID_SIZE}
-            height={GRID_SIZE}
+            width={GRID_CONFIG.cellSize}
+            height={GRID_CONFIG.cellSize}
             patternUnits="userSpaceOnUse"
           >
-            <rect width={GRID_SIZE} height={GRID_SIZE} fill="#f5f5f5" />
+            <rect
+              width={GRID_CONFIG.cellSize}
+              height={GRID_CONFIG.cellSize}
+              fill={GRID_CONFIG.backgroundColor}
+            />
             <path
-              d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+              d={`M ${GRID_CONFIG.cellSize} 0 L 0 0 0 ${GRID_CONFIG.cellSize}`}
               fill="none"
-              stroke="#d4d4d8"
-              strokeWidth={1}
+              stroke={GRID_CONFIG.lineColor}
+              strokeWidth={GRID_CONFIG.lineWidth}
             />
           </pattern>
           <marker
@@ -197,11 +174,7 @@ export function GraphCanvas({
             <path d={GRAPH_STYLE.arrowMarker.path} fill="black" />
           </marker>
         </defs>
-        <rect
-          width="100%"
-          height="100%"
-          fill={`url(#${gridPatternId})`}
-        />
+        <rect width="100%" height="100%" fill={`url(#${gridPatternId})`} />
         {edges.map((edge) => {
           const from = nodes.find((n) => n.id === edge.from);
           const to = nodes.find((n) => n.id === edge.to);
@@ -247,7 +220,7 @@ export function GraphCanvas({
               <circle
                 cx={node.x}
                 cy={node.y}
-                r={selectionRingRadius}
+                r={SELECTION_RING_RADIUS}
                 fill="none"
                 stroke="#4f46e5"
                 strokeWidth={2}

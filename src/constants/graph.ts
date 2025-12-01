@@ -14,3 +14,6 @@ export const GRAPH_STYLE = {
     path: "M0,0 L12,6 L0,12 z",
   },
 } as const;
+
+export const SELECTION_RING_RADIUS =
+  GRAPH_STYLE.nodeRadius + GRAPH_STYLE.selectionRingOffset;
