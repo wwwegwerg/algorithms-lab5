@@ -41,6 +41,22 @@ function App() {
     }
 
     if (edgeStartNodeId === nodeId) {
+      const hasSelfLoop = edges.some(
+        (edge) => edge.from === nodeId && edge.to === nodeId,
+      );
+      if (hasSelfLoop) {
+        console.warn("У вершины уже есть петля.");
+        setEdgeStartNodeId(null);
+        return;
+      }
+      const loopEdge: Edge = {
+        id: crypto.randomUUID(),
+        from: nodeId,
+        to: nodeId,
+        isDirected: false,
+        curvatureOffset: 0,
+      };
+      setEdges((prev) => [...prev, loopEdge]);
       setEdgeStartNodeId(null);
       return;
     }
@@ -124,10 +140,12 @@ function App() {
     setEdges((prev) =>
       prev.map((edge) =>
         edge.id === edgeId
-          ? {
-              ...edge,
-              curvatureOffset: offset,
-            }
+          ? edge.from === edge.to
+            ? edge
+            : {
+                ...edge,
+                curvatureOffset: offset,
+              }
           : edge,
       ),
     );

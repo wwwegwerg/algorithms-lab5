@@ -23,6 +23,12 @@ const HIGHLIGHT_ARROW_SCALE: number = GRAPH_STYLE.deleteHighlight.arrowScale;
 const EDITING_CHAR_PIXEL_WIDTH = 7;
 const EDGE_WEIGHT_INPUT_PATTERN = /^-?\d*(\.\d*)?$/;
 const EDGE_WEIGHT_LABEL_OFFSET = 10;
+const SELF_LOOP_CENTER_OFFSET = GRAPH_STYLE.nodeRadius * 1;
+const SELF_LOOP_RADIUS = Math.hypot(
+  SELF_LOOP_CENTER_OFFSET,
+  SELF_LOOP_CENTER_OFFSET - GRAPH_STYLE.nodeRadius,
+);
+const SELF_LOOP_LABEL_OFFSET = 12;
 
 const evaluateQuadraticPoint = (
   p0: { x: number; y: number },
@@ -520,6 +526,100 @@ export function GraphCanvas({
           const from = nodes.find((n) => n.id === edge.from);
           const to = nodes.find((n) => n.id === edge.to);
           if (!from || !to) return null;
+          const weightLabel =
+            edge.weight === undefined ? "" : String(edge.weight);
+          const isEditingWeight = mode === "idle" && editingEdgeId === edge.id;
+          const isEdgeHighlighted =
+            mode === "delete" && hoveredEdgeId === edge.id;
+
+          if (edge.from === edge.to) {
+            const nodeRadius = GRAPH_STYLE.nodeRadius;
+            const loopCenterX = from.x - SELF_LOOP_CENTER_OFFSET;
+            const loopCenterY = from.y - SELF_LOOP_CENTER_OFFSET;
+            const loopStart = { x: from.x, y: from.y - nodeRadius };
+            const loopLeft = { x: from.x - nodeRadius, y: from.y };
+            const pathD = [
+              `M ${loopStart.x} ${loopStart.y}`,
+              `A ${SELF_LOOP_RADIUS} ${SELF_LOOP_RADIUS} 0 1 0 ${loopLeft.x} ${loopLeft.y}`,
+              `A ${SELF_LOOP_RADIUS} ${SELF_LOOP_RADIUS} 0 0 0 ${loopStart.x} ${loopStart.y}`,
+            ].join(" ");
+            const labelPosition = {
+              x: loopCenterX,
+              y: loopCenterY - SELF_LOOP_RADIUS - SELF_LOOP_LABEL_OFFSET,
+            };
+            const editingWidth = editingEdgeInputWidth ?? 40;
+            const editingX = labelPosition.x - editingWidth / 2;
+            const editingY = labelPosition.y - 12;
+
+            return (
+              <g key={edge.id}>
+                {isEdgeHighlighted ? (
+                  <path
+                    d={pathD}
+                    stroke={GRAPH_STYLE.deleteHighlight.color}
+                    fill="none"
+                    strokeWidth={GRAPH_STYLE.deleteHighlight.edgeStrokeWidth}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    pointerEvents="none"
+                  />
+                ) : null}
+                <path
+                  d={pathD}
+                  stroke="black"
+                  fill="none"
+                  strokeWidth={GRAPH_STYLE.edgeStrokeWidth.default}
+                  className={cn(mode === "delete" && "cursor-pointer")}
+                  onClick={(event) => handleEdgeClick(event, edge.id)}
+                  onDoubleClick={(event) => handleEdgeDoubleClick(event, edge)}
+                  onMouseEnter={() => handleEdgeMouseEnter(edge.id)}
+                  onMouseLeave={() => handleEdgeMouseLeave(edge.id)}
+                />
+                {isEditingWeight ? (
+                  <foreignObject
+                    x={editingX}
+                    y={editingY}
+                    width={editingWidth}
+                    height={24}
+                  >
+                    <div className="flex h-full w-full items-center justify-center">
+                      <input
+                        ref={edgeWeightInputRef}
+                        value={editingEdgeWeight}
+                        onChange={handleEdgeWeightInputChange}
+                        onKeyDown={handleEdgeWeightInputKeyDown}
+                        onBlur={handleEdgeWeightInputBlur}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={(event) => event.stopPropagation()}
+                        onDoubleClick={(event) => event.stopPropagation()}
+                        spellCheck={false}
+                        inputMode="decimal"
+                        className={cn(
+                          "w-full border-none bg-transparent text-center text-xs text-black underline caret-black",
+                          "focus:outline-none",
+                        )}
+                      />
+                    </div>
+                  </foreignObject>
+                ) : weightLabel ? (
+                  <text
+                    x={labelPosition.x}
+                    y={labelPosition.y}
+                    textAnchor="middle"
+                    dy="0.35em"
+                    fontSize={12}
+                    className={cn(mode === "delete" && "cursor-pointer")}
+                    onDoubleClick={(event) =>
+                      handleEdgeDoubleClick(event, edge)
+                    }
+                  >
+                    {weightLabel}
+                  </text>
+                ) : null}
+              </g>
+            );
+          }
+
           const fromPoint = { x: from.x, y: from.y };
           const toPoint = { x: to.x, y: to.y };
           const baselineDx = toPoint.x - fromPoint.x;
@@ -595,8 +695,6 @@ export function GraphCanvas({
           const endX = trimmedCurve.p2.x;
           const endY = trimmedCurve.p2.y;
           const pathD = `M ${startX} ${startY} Q ${controlTrimmedX} ${controlTrimmedY} ${endX} ${endY}`;
-          const isEdgeHighlighted =
-            mode === "delete" && hoveredEdgeId === edge.id;
           const labelPoint = evaluateQuadraticPoint(
             trimmedCurve.p0,
             trimmedCurve.p1,
@@ -633,9 +731,6 @@ export function GraphCanvas({
               : labelAngleRaw <= -90
                 ? labelAngleRaw + 180
                 : labelAngleRaw;
-          const weightLabel =
-            edge.weight === undefined ? "" : String(edge.weight);
-          const isEditingWeight = mode === "idle" && editingEdgeId === edge.id;
 
           return (
             <g key={edge.id}>
