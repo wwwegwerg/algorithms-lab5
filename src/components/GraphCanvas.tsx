@@ -8,65 +8,19 @@ import React, {
 } from "react";
 import { Toolbar } from "@/components/Toolbar";
 import { GRAPH_STYLE, SELECTION_RING_RADIUS } from "@/constants/graph";
+import {
+  EDGE_WEIGHT_INPUT_PATTERN,
+  EDITING_CHAR_PIXEL_WIDTH,
+  HIGHLIGHT_ARROW_TRANSFORM,
+} from "@/constants/graphCanvas";
 import { GRID_CONFIG } from "@/constants/grid";
 import {
-  clamp,
-  findTrimParameterFromEnd,
-  findTrimParameterFromStart,
-  splitQuadratic,
-} from "@/lib/bezier";
+  buildCurvedEdgeGeometry,
+  buildSelfLoopGeometry,
+} from "@/lib/edgeGeometry";
 import { snapToGrid } from "@/lib/grid";
 import { cn } from "@/lib/utils";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
-
-const HIGHLIGHT_ARROW_SCALE: number = GRAPH_STYLE.deleteHighlight.arrowScale;
-const EDITING_CHAR_PIXEL_WIDTH = 7;
-const EDGE_WEIGHT_INPUT_PATTERN = /^-?\d*(\.\d*)?$/;
-const EDGE_WEIGHT_LABEL_OFFSET = 10;
-const SELF_LOOP_CENTER_OFFSET = GRAPH_STYLE.nodeRadius * 1;
-const SELF_LOOP_RADIUS = Math.hypot(
-  SELF_LOOP_CENTER_OFFSET,
-  SELF_LOOP_CENTER_OFFSET - GRAPH_STYLE.nodeRadius,
-);
-const SELF_LOOP_LABEL_OFFSET = 12;
-
-const evaluateQuadraticPoint = (
-  p0: { x: number; y: number },
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  t: number,
-) => {
-  const mt = 1 - t;
-  const mt2 = mt * mt;
-  const t2 = t * t;
-  return {
-    x: mt2 * p0.x + 2 * mt * t * p1.x + t2 * p2.x,
-    y: mt2 * p0.y + 2 * mt * t * p1.y + t2 * p2.y,
-  };
-};
-
-const evaluateQuadraticTangent = (
-  p0: { x: number; y: number },
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  t: number,
-) => {
-  const ax = p1.x - p0.x;
-  const ay = p1.y - p0.y;
-  const bx = p2.x - p1.x;
-  const by = p2.y - p1.y;
-  const tangent = {
-    x: 2 * ((1 - t) * ax + t * bx),
-    y: 2 * ((1 - t) * ay + t * by),
-  };
-  const length = Math.hypot(tangent.x, tangent.y) || 1;
-  return { x: tangent.x / length, y: tangent.y / length };
-};
-const ARROW_MARKER_CENTER = { x: 7.5, y: 6 };
-const HIGHLIGHT_ARROW_TRANSFORM =
-  HIGHLIGHT_ARROW_SCALE === 1
-    ? undefined
-    : `translate(${ARROW_MARKER_CENTER.x} ${ARROW_MARKER_CENTER.y}) scale(${HIGHLIGHT_ARROW_SCALE}) translate(-${ARROW_MARKER_CENTER.x} -${ARROW_MARKER_CENTER.y})`;
 
 type GraphCanvasProps = {
   nodes: Node[];
@@ -533,29 +487,16 @@ export function GraphCanvas({
             mode === "delete" && hoveredEdgeId === edge.id;
 
           if (edge.from === edge.to) {
-            const nodeRadius = GRAPH_STYLE.nodeRadius;
-            const loopCenterX = from.x - SELF_LOOP_CENTER_OFFSET;
-            const loopCenterY = from.y - SELF_LOOP_CENTER_OFFSET;
-            const loopStart = { x: from.x, y: from.y - nodeRadius };
-            const loopLeft = { x: from.x - nodeRadius, y: from.y };
-            const pathD = [
-              `M ${loopStart.x} ${loopStart.y}`,
-              `A ${SELF_LOOP_RADIUS} ${SELF_LOOP_RADIUS} 0 1 0 ${loopLeft.x} ${loopLeft.y}`,
-              `A ${SELF_LOOP_RADIUS} ${SELF_LOOP_RADIUS} 0 0 0 ${loopStart.x} ${loopStart.y}`,
-            ].join(" ");
-            const labelPosition = {
-              x: loopCenterX,
-              y: loopCenterY - SELF_LOOP_RADIUS - SELF_LOOP_LABEL_OFFSET,
-            };
+            const loopGeometry = buildSelfLoopGeometry(from);
             const editingWidth = editingEdgeInputWidth ?? 40;
-            const editingX = labelPosition.x - editingWidth / 2;
-            const editingY = labelPosition.y - 12;
+            const editingX = loopGeometry.labelPosition.x - editingWidth / 2;
+            const editingY = loopGeometry.labelPosition.y - 12;
 
             return (
               <g key={edge.id}>
                 {isEdgeHighlighted ? (
                   <path
-                    d={pathD}
+                    d={loopGeometry.pathD}
                     stroke={GRAPH_STYLE.deleteHighlight.color}
                     fill="none"
                     strokeWidth={GRAPH_STYLE.deleteHighlight.edgeStrokeWidth}
@@ -565,7 +506,7 @@ export function GraphCanvas({
                   />
                 ) : null}
                 <path
-                  d={pathD}
+                  d={loopGeometry.pathD}
                   stroke="black"
                   fill="none"
                   strokeWidth={GRAPH_STYLE.edgeStrokeWidth.default}
@@ -603,8 +544,8 @@ export function GraphCanvas({
                   </foreignObject>
                 ) : weightLabel ? (
                   <text
-                    x={labelPosition.x}
-                    y={labelPosition.y}
+                    x={loopGeometry.labelPosition.x}
+                    y={loopGeometry.labelPosition.y}
                     textAnchor="middle"
                     dy="0.35em"
                     fontSize={12}
@@ -620,117 +561,18 @@ export function GraphCanvas({
             );
           }
 
-          const fromPoint = { x: from.x, y: from.y };
-          const toPoint = { x: to.x, y: to.y };
-          const baselineDx = toPoint.x - fromPoint.x;
-          const baselineDy = toPoint.y - fromPoint.y;
-          const baselineLength = Math.hypot(baselineDx, baselineDy);
-          if (baselineLength === 0) {
+          const curvedGeometry = buildCurvedEdgeGeometry(edge, from, to);
+          if (!curvedGeometry) {
             return null;
           }
-          const normalX = -baselineDy / baselineLength;
-          const normalY = baselineDx / baselineLength;
-          const axisOrigin = {
-            x: (fromPoint.x + toPoint.x) / 2,
-            y: (fromPoint.y + toPoint.y) / 2,
-          };
-          const offset = edge.curvatureOffset;
-          const vertexX = axisOrigin.x + normalX * offset;
-          const vertexY = axisOrigin.y + normalY * offset;
-          const controlX = 2 * vertexX - axisOrigin.x;
-          const controlY = 2 * vertexY - axisOrigin.y;
-          const baseCurve = {
-            p0: fromPoint,
-            p1: { x: controlX, y: controlY },
-            p2: toPoint,
-          };
-          const startTrimDistance = GRAPH_STYLE.nodeRadius;
-          const desiredEndTrimDistance = edge.isDirected
-            ? GRAPH_STYLE.nodeRadius + GRAPH_STYLE.arrowClearance
-            : GRAPH_STYLE.nodeRadius;
-          const startDistance = Math.min(
-            startTrimDistance,
-            Math.max(baselineLength / 2, 0),
-          );
-          const endDistance = Math.min(
-            desiredEndTrimDistance,
-            Math.max(baselineLength / 2, 0),
-          );
-          const tStart = findTrimParameterFromStart(
-            baseCurve.p0,
-            baseCurve.p1,
-            baseCurve.p2,
-            fromPoint,
-            startDistance,
-          );
-          const tEnd = findTrimParameterFromEnd(
-            baseCurve.p0,
-            baseCurve.p1,
-            baseCurve.p2,
-            toPoint,
-            endDistance,
-          );
-          const safeTStart = clamp(tStart, 0, 1);
-          const safeTEnd = clamp(Math.max(tEnd, safeTStart + 0.001), 0, 1);
-          const afterStartSplit = splitQuadratic(
-            baseCurve.p0,
-            baseCurve.p1,
-            baseCurve.p2,
-            safeTStart,
-          ).right;
-          const normalizedEndT =
-            safeTEnd <= safeTStart
-              ? 1
-              : clamp((safeTEnd - safeTStart) / (1 - safeTStart), 0, 1);
-          const trimmedCurve = splitQuadratic(
-            afterStartSplit.p0,
-            afterStartSplit.p1,
-            afterStartSplit.p2,
-            normalizedEndT,
-          ).left;
-          const startX = trimmedCurve.p0.x;
-          const startY = trimmedCurve.p0.y;
-          const controlTrimmedX = trimmedCurve.p1.x;
-          const controlTrimmedY = trimmedCurve.p1.y;
-          const endX = trimmedCurve.p2.x;
-          const endY = trimmedCurve.p2.y;
-          const pathD = `M ${startX} ${startY} Q ${controlTrimmedX} ${controlTrimmedY} ${endX} ${endY}`;
-          const labelPoint = evaluateQuadraticPoint(
-            trimmedCurve.p0,
-            trimmedCurve.p1,
-            trimmedCurve.p2,
-            0.5,
-          );
-          const labelTangent = evaluateQuadraticTangent(
-            trimmedCurve.p0,
-            trimmedCurve.p1,
-            trimmedCurve.p2,
-            0.5,
-          );
-          const rawNormal = {
-            x: -labelTangent.y,
-            y: labelTangent.x,
-          };
-          const rawNormalLength = Math.hypot(rawNormal.x, rawNormal.y) || 1;
-          let labelNormal = {
-            x: rawNormal.x / rawNormalLength,
-            y: rawNormal.y / rawNormalLength,
-          };
-          if (labelNormal.y > 0) {
-            labelNormal = { x: -labelNormal.x, y: -labelNormal.y };
-          }
-          const labelPosition = {
-            x: labelPoint.x + labelNormal.x * EDGE_WEIGHT_LABEL_OFFSET,
-            y: labelPoint.y + labelNormal.y * EDGE_WEIGHT_LABEL_OFFSET,
-          };
-          const labelAngleRaw =
-            (Math.atan2(labelTangent.y, labelTangent.x) * 180) / Math.PI;
-          const labelAngle =
-            labelAngleRaw >= 90
-              ? labelAngleRaw - 180
-              : labelAngleRaw <= -90
-                ? labelAngleRaw + 180
-                : labelAngleRaw;
+          const {
+            pathD,
+            labelPosition,
+            labelAngle,
+            axisOrigin,
+            curvatureHandlePosition,
+            curvatureAxisDirection,
+          } = curvedGeometry;
 
           return (
             <g key={edge.id}>
@@ -818,15 +660,15 @@ export function GraphCanvas({
                   <line
                     x1={axisOrigin.x}
                     y1={axisOrigin.y}
-                    x2={vertexX}
-                    y2={vertexY}
+                    x2={curvatureHandlePosition.x}
+                    y2={curvatureHandlePosition.y}
                     stroke="#a5b4fc"
                     strokeWidth={1}
                     strokeDasharray="4 4"
                   />
                   <circle
-                    cx={vertexX}
-                    cy={vertexY}
+                    cx={curvatureHandlePosition.x}
+                    cy={curvatureHandlePosition.y}
                     r={6}
                     fill="white"
                     stroke="#4f46e5"
@@ -837,7 +679,7 @@ export function GraphCanvas({
                         event,
                         edge.id,
                         axisOrigin,
-                        { x: normalX, y: normalY },
+                        curvatureAxisDirection,
                       )
                     }
                   />

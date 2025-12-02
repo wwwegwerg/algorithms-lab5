@@ -17,6 +17,24 @@ export const evaluateQuadraticPoint = (
   return { x, y };
 };
 
+export const evaluateQuadraticTangent = (
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  t: number,
+) => {
+  const ax = p1.x - p0.x;
+  const ay = p1.y - p0.y;
+  const bx = p2.x - p1.x;
+  const by = p2.y - p1.y;
+  const tangent = {
+    x: 2 * ((1 - t) * ax + t * bx),
+    y: 2 * ((1 - t) * ay + t * by),
+  };
+  const length = Math.hypot(tangent.x, tangent.y) || 1;
+  return { x: tangent.x / length, y: tangent.y / length };
+};
+
 export const splitQuadratic = (p0: Point, p1: Point, p2: Point, t: number) => {
   const p01 = {
     x: p0.x + (p1.x - p0.x) * t,
