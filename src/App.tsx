@@ -133,6 +133,22 @@ function App() {
     );
   };
 
+  const handleEdgeWeightChange = (
+    edgeId: EdgeId,
+    weight: number | undefined,
+  ) => {
+    setEdges((prev) =>
+      prev.map((edge) =>
+        edge.id === edgeId
+          ? {
+              ...edge,
+              weight,
+            }
+          : edge,
+      ),
+    );
+  };
+
   return (
     <div className="flex h-screen w-screen flex-col">
       <div className="flex min-h-0 flex-1">
@@ -152,6 +168,7 @@ function App() {
             onNodeDelete={handleNodeDelete}
             onEdgeDelete={handleEdgeDelete}
             onEdgeCurvatureChange={handleEdgeCurvatureChange}
+            onEdgeWeightChange={handleEdgeWeightChange}
           />
         </div>
       </div>

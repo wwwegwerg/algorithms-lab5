@@ -21,6 +21,41 @@ import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
 const HIGHLIGHT_ARROW_SCALE: number = GRAPH_STYLE.deleteHighlight.arrowScale;
 const EDITING_CHAR_PIXEL_WIDTH = 7;
+const EDGE_WEIGHT_INPUT_PATTERN = /^-?\d*(\.\d*)?$/;
+const EDGE_WEIGHT_LABEL_OFFSET = 10;
+
+const evaluateQuadraticPoint = (
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  t: number,
+) => {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const t2 = t * t;
+  return {
+    x: mt2 * p0.x + 2 * mt * t * p1.x + t2 * p2.x,
+    y: mt2 * p0.y + 2 * mt * t * p1.y + t2 * p2.y,
+  };
+};
+
+const evaluateQuadraticTangent = (
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  t: number,
+) => {
+  const ax = p1.x - p0.x;
+  const ay = p1.y - p0.y;
+  const bx = p2.x - p1.x;
+  const by = p2.y - p1.y;
+  const tangent = {
+    x: 2 * ((1 - t) * ax + t * bx),
+    y: 2 * ((1 - t) * ay + t * by),
+  };
+  const length = Math.hypot(tangent.x, tangent.y) || 1;
+  return { x: tangent.x / length, y: tangent.y / length };
+};
 const ARROW_MARKER_CENTER = { x: 7.5, y: 6 };
 const HIGHLIGHT_ARROW_TRANSFORM =
   HIGHLIGHT_ARROW_SCALE === 1
@@ -40,6 +75,7 @@ type GraphCanvasProps = {
   onNodeDelete: (nodeId: NodeId) => void;
   onEdgeDelete: (edgeId: EdgeId) => void;
   onEdgeCurvatureChange: (edgeId: EdgeId, offset: number) => void;
+  onEdgeWeightChange: (edgeId: EdgeId, weight: number | undefined) => void;
 };
 
 export function GraphCanvas({
@@ -55,6 +91,7 @@ export function GraphCanvas({
   onNodeDelete,
   onEdgeDelete,
   onEdgeCurvatureChange,
+  onEdgeWeightChange,
 }: GraphCanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const draggingNodeIdRef = useRef<NodeId | null>(null);
@@ -69,12 +106,18 @@ export function GraphCanvas({
   const [editingNodeId, setEditingNodeId] = useState<NodeId | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
   const labelInputRef = useRef<HTMLInputElement | null>(null);
+  const [editingEdgeId, setEditingEdgeId] = useState<EdgeId | null>(null);
+  const [editingEdgeWeight, setEditingEdgeWeight] = useState("");
+  const edgeWeightInputRef = useRef<HTMLInputElement | null>(null);
   const uniqueId = useId().replace(/:/g, "");
   const arrowMarkerId = `${uniqueId}-arrow`;
   const arrowHighlightMarkerId = `${uniqueId}-arrow-highlight`;
   const gridPatternId = `${uniqueId}-grid`;
   const editingNode = editingNodeId
     ? nodes.find((node) => node.id === editingNodeId)
+    : null;
+  const editingEdge = editingEdgeId
+    ? edges.find((edge) => edge.id === editingEdgeId)
     : null;
   const editingInputWidth = useMemo(() => {
     if (!editingNode) return null;
@@ -85,6 +128,15 @@ export function GraphCanvas({
         : editingLabel.length * EDITING_CHAR_PIXEL_WIDTH + 12;
     return Math.max(minWidth, estimatedWidth);
   }, [editingNode, editingLabel]);
+  const editingEdgeInputWidth = useMemo(() => {
+    if (!editingEdge) return null;
+    const minWidth = 40;
+    const estimatedWidth =
+      editingEdgeWeight.length === 0
+        ? minWidth
+        : editingEdgeWeight.length * EDITING_CHAR_PIXEL_WIDTH + 12;
+    return Math.max(minWidth, estimatedWidth);
+  }, [editingEdge, editingEdgeWeight]);
 
   const clearHoverState = useCallback(() => {
     setHoveredNodeId(null);
@@ -104,6 +156,14 @@ export function GraphCanvas({
     input.focus();
     input.select();
   }, [editingNodeId]);
+
+  useEffect(() => {
+    if (!editingEdgeId) return;
+    const input = edgeWeightInputRef.current;
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, [editingEdgeId]);
 
   const handleSvgClick = (
     event: React.MouseEvent<SVGSVGElement, MouseEvent>,
@@ -283,6 +343,8 @@ export function GraphCanvas({
     if (mode !== "idle") return;
     event.stopPropagation();
     event.preventDefault();
+    setEditingEdgeId(null);
+    setEditingEdgeWeight("");
     setEditingNodeId(node.id);
     setEditingLabel(node.label);
   };
@@ -326,6 +388,67 @@ export function GraphCanvas({
 
   const handleLabelInputBlur = () => {
     commitEditingNodeLabel();
+  };
+
+  const handleEdgeDoubleClick = (
+    event: React.MouseEvent<SVGPathElement | SVGTextElement, MouseEvent>,
+    edge: Edge,
+  ) => {
+    if (mode !== "idle") return;
+    event.stopPropagation();
+    event.preventDefault();
+    setEditingNodeId(null);
+    setEditingLabel("");
+    setEditingEdgeId(edge.id);
+    setEditingEdgeWeight(edge.weight === undefined ? "" : String(edge.weight));
+  };
+
+  const commitEditingEdgeWeight = () => {
+    if (!editingEdgeId) return;
+    const trimmed = editingEdgeWeight.trim();
+    if (trimmed === "") {
+      onEdgeWeightChange(editingEdgeId, undefined);
+      setEditingEdgeId(null);
+      setEditingEdgeWeight("");
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+    onEdgeWeightChange(editingEdgeId, parsed);
+    setEditingEdgeId(null);
+    setEditingEdgeWeight("");
+  };
+
+  const cancelEditingEdgeWeight = () => {
+    setEditingEdgeId(null);
+    setEditingEdgeWeight("");
+  };
+
+  const handleEdgeWeightInputKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitEditingEdgeWeight();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancelEditingEdgeWeight();
+    }
+  };
+
+  const handleEdgeWeightInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const { value } = event.target;
+    if (value === "" || EDGE_WEIGHT_INPUT_PATTERN.test(value)) {
+      setEditingEdgeWeight(value);
+    }
+  };
+
+  const handleEdgeWeightInputBlur = () => {
+    commitEditingEdgeWeight();
   };
 
   return (
@@ -474,6 +597,45 @@ export function GraphCanvas({
           const pathD = `M ${startX} ${startY} Q ${controlTrimmedX} ${controlTrimmedY} ${endX} ${endY}`;
           const isEdgeHighlighted =
             mode === "delete" && hoveredEdgeId === edge.id;
+          const labelPoint = evaluateQuadraticPoint(
+            trimmedCurve.p0,
+            trimmedCurve.p1,
+            trimmedCurve.p2,
+            0.5,
+          );
+          const labelTangent = evaluateQuadraticTangent(
+            trimmedCurve.p0,
+            trimmedCurve.p1,
+            trimmedCurve.p2,
+            0.5,
+          );
+          const rawNormal = {
+            x: -labelTangent.y,
+            y: labelTangent.x,
+          };
+          const rawNormalLength = Math.hypot(rawNormal.x, rawNormal.y) || 1;
+          let labelNormal = {
+            x: rawNormal.x / rawNormalLength,
+            y: rawNormal.y / rawNormalLength,
+          };
+          if (labelNormal.y >= 0) {
+            labelNormal = { x: -labelNormal.x, y: -labelNormal.y };
+          }
+          const labelPosition = {
+            x: labelPoint.x + labelNormal.x * EDGE_WEIGHT_LABEL_OFFSET,
+            y: labelPoint.y + labelNormal.y * EDGE_WEIGHT_LABEL_OFFSET,
+          };
+          const labelAngleRaw =
+            (Math.atan2(labelTangent.y, labelTangent.x) * 180) / Math.PI;
+          const labelAngle =
+            labelAngleRaw > 90
+              ? labelAngleRaw - 180
+              : labelAngleRaw < -90
+                ? labelAngleRaw + 180
+                : labelAngleRaw;
+          const weightLabel =
+            edge.weight === undefined ? "" : String(edge.weight);
+          const isEditingWeight = mode === "idle" && editingEdgeId === edge.id;
 
           return (
             <g key={edge.id}>
@@ -500,12 +662,62 @@ export function GraphCanvas({
                 strokeWidth={GRAPH_STYLE.edgeStrokeWidth.default}
                 className={cn(mode === "delete" && "cursor-pointer")}
                 onClick={(event) => handleEdgeClick(event, edge.id)}
+                onDoubleClick={(event) => handleEdgeDoubleClick(event, edge)}
                 onMouseEnter={() => handleEdgeMouseEnter(edge.id)}
                 onMouseLeave={() => handleEdgeMouseLeave(edge.id)}
                 markerEnd={
                   edge.isDirected ? `url(#${arrowMarkerId})` : undefined
                 }
               />
+              {isEditingWeight ? (
+                <g
+                  transform={`translate(${labelPosition.x} ${labelPosition.y}) rotate(${labelAngle})`}
+                >
+                  <foreignObject
+                    x={editingEdgeInputWidth ? -editingEdgeInputWidth / 2 : -20}
+                    y={-12}
+                    width={editingEdgeInputWidth ?? 40}
+                    height={24}
+                  >
+                    <div className="flex h-full w-full items-center justify-center">
+                      <input
+                        ref={edgeWeightInputRef}
+                        value={editingEdgeWeight}
+                        onChange={handleEdgeWeightInputChange}
+                        onKeyDown={handleEdgeWeightInputKeyDown}
+                        onBlur={handleEdgeWeightInputBlur}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={(event) => event.stopPropagation()}
+                        onDoubleClick={(event) => event.stopPropagation()}
+                        spellCheck={false}
+                        inputMode="decimal"
+                        className={cn(
+                          "w-full border-none bg-transparent text-center text-xs text-black underline caret-black",
+                          "focus:outline-none",
+                        )}
+                      />
+                    </div>
+                  </foreignObject>
+                </g>
+              ) : weightLabel ? (
+                <g
+                  transform={`translate(${labelPosition.x} ${labelPosition.y}) rotate(${labelAngle})`}
+                >
+                  <text
+                    x={0}
+                    y={0}
+                    textAnchor="middle"
+                    dy="0.35em"
+                    fontSize={12}
+                    className={cn(mode === "delete" && "cursor-pointer")}
+                    onDoubleClick={(event) =>
+                      handleEdgeDoubleClick(event, edge)
+                    }
+                  >
+                    {weightLabel}
+                  </text>
+                </g>
+              ) : null}
               {mode === "adjust-curvature" ? (
                 <>
                   <line
@@ -612,7 +824,7 @@ export function GraphCanvas({
                       onDoubleClick={(event) => event.stopPropagation()}
                       spellCheck={false}
                       className={cn(
-                        "w-full border-none bg-transparent text-center text-xs text-black underline",
+                        "w-full border-none bg-transparent text-center text-xs text-black underline caret-black",
                         "focus:outline-none",
                       )}
                     />
