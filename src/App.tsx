@@ -93,6 +93,19 @@ function App() {
     );
   };
 
+  const handleNodeLabelChange = (nodeId: NodeId, label: string) => {
+    setNodes((prev) =>
+      prev.map((node) =>
+        node.id === nodeId
+          ? {
+              ...node,
+              label,
+            }
+          : node,
+      ),
+    );
+  };
+
   const handleNodeDelete = (nodeId: NodeId) => {
     setNodes((prev) => prev.filter((node) => node.id !== nodeId));
     setEdges((prev) =>
@@ -135,6 +148,7 @@ function App() {
             onNodeClick={handleNodeClick}
             edgeStartNodeId={edgeStartNodeId}
             onNodePositionChange={handleNodePositionChange}
+            onNodeLabelChange={handleNodeLabelChange}
             onNodeDelete={handleNodeDelete}
             onEdgeDelete={handleEdgeDelete}
             onEdgeCurvatureChange={handleEdgeCurvatureChange}

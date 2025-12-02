@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Toolbar } from "@/components/Toolbar";
 import { GRAPH_STYLE, SELECTION_RING_RADIUS } from "@/constants/graph";
 import { GRID_CONFIG } from "@/constants/grid";
@@ -12,7 +19,8 @@ import { snapToGrid } from "@/lib/grid";
 import { cn } from "@/lib/utils";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
-const HIGHLIGHT_ARROW_SCALE = GRAPH_STYLE.deleteHighlight.arrowScale;
+const HIGHLIGHT_ARROW_SCALE: number = GRAPH_STYLE.deleteHighlight.arrowScale;
+const EDITING_CHAR_PIXEL_WIDTH = 7;
 const ARROW_MARKER_CENTER = { x: 7.5, y: 6 };
 const HIGHLIGHT_ARROW_TRANSFORM =
   HIGHLIGHT_ARROW_SCALE === 1
@@ -28,6 +36,7 @@ type GraphCanvasProps = {
   onNodeClick: (nodeId: NodeId) => void;
   edgeStartNodeId: NodeId | null;
   onNodePositionChange: (nodeId: NodeId, x: number, y: number) => void;
+  onNodeLabelChange: (nodeId: NodeId, label: string) => void;
   onNodeDelete: (nodeId: NodeId) => void;
   onEdgeDelete: (edgeId: EdgeId) => void;
   onEdgeCurvatureChange: (edgeId: EdgeId, offset: number) => void;
@@ -42,6 +51,7 @@ export function GraphCanvas({
   onNodeClick,
   edgeStartNodeId,
   onNodePositionChange,
+  onNodeLabelChange,
   onNodeDelete,
   onEdgeDelete,
   onEdgeCurvatureChange,
@@ -56,10 +66,25 @@ export function GraphCanvas({
   } | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<NodeId | null>(null);
   const [hoveredEdgeId, setHoveredEdgeId] = useState<EdgeId | null>(null);
+  const [editingNodeId, setEditingNodeId] = useState<NodeId | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
+  const labelInputRef = useRef<HTMLInputElement | null>(null);
   const uniqueId = useId().replace(/:/g, "");
   const arrowMarkerId = `${uniqueId}-arrow`;
   const arrowHighlightMarkerId = `${uniqueId}-arrow-highlight`;
   const gridPatternId = `${uniqueId}-grid`;
+  const editingNode = editingNodeId
+    ? nodes.find((node) => node.id === editingNodeId)
+    : null;
+  const editingInputWidth = useMemo(() => {
+    if (!editingNode) return null;
+    const minWidth = GRAPH_STYLE.nodeRadius * 2;
+    const estimatedWidth =
+      editingLabel.length === 0
+        ? minWidth
+        : editingLabel.length * EDITING_CHAR_PIXEL_WIDTH + 12;
+    return Math.max(minWidth, estimatedWidth);
+  }, [editingNode, editingLabel]);
 
   const clearHoverState = useCallback(() => {
     setHoveredNodeId(null);
@@ -71,6 +96,14 @@ export function GraphCanvas({
       draggingCurvatureRef.current = null;
     }
   }, [mode]);
+
+  useEffect(() => {
+    if (!editingNodeId) return;
+    const input = labelInputRef.current;
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, [editingNodeId]);
 
   const handleSvgClick = (
     event: React.MouseEvent<SVGSVGElement, MouseEvent>,
@@ -129,6 +162,7 @@ export function GraphCanvas({
     node: Node,
   ) => {
     if (mode !== "idle") return;
+    if (editingNodeId) return;
     if (event.button !== 0) return; // LMB
     event.stopPropagation();
     event.preventDefault();
@@ -240,6 +274,58 @@ export function GraphCanvas({
       axisOrigin,
       axisDirection,
     };
+  };
+
+  const handleNodeDoubleClick = (
+    event: React.MouseEvent<SVGGElement, MouseEvent>,
+    node: Node,
+  ) => {
+    if (mode !== "idle") return;
+    event.stopPropagation();
+    event.preventDefault();
+    setEditingNodeId(node.id);
+    setEditingLabel(node.label);
+  };
+
+  const commitEditingNodeLabel = () => {
+    if (!editingNodeId || !editingNode) {
+      setEditingNodeId(null);
+      setEditingLabel("");
+      return;
+    }
+    const trimmed = editingLabel.trim();
+    if (trimmed !== editingNode.label) {
+      onNodeLabelChange(editingNodeId, trimmed);
+    }
+    setEditingNodeId(null);
+    setEditingLabel("");
+  };
+
+  const cancelEditingNodeLabel = () => {
+    setEditingNodeId(null);
+    setEditingLabel("");
+  };
+
+  const handleLabelInputKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitEditingNodeLabel();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancelEditingNodeLabel();
+    }
+  };
+
+  const handleLabelInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setEditingLabel(event.target.value);
+  };
+
+  const handleLabelInputBlur = () => {
+    commitEditingNodeLabel();
   };
 
   return (
@@ -454,63 +540,98 @@ export function GraphCanvas({
           );
         })}
 
-        {nodes.map((node) => (
-          <g
-            key={node.id}
-            onClick={(event) => handleNodeClick(event, node.id)}
-            onMouseDown={(event) => handleNodeMouseDown(event, node)}
-            onMouseEnter={() => handleNodeMouseEnter(node.id)}
-            onMouseLeave={() => handleNodeMouseLeave(node.id)}
-            className={
-              mode === "idle"
-                ? "cursor-grab active:cursor-grabbing"
-                : "cursor-pointer"
-            }
-          >
-            {mode === "delete" && hoveredNodeId === node.id ? (
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={
-                  GRAPH_STYLE.nodeRadius +
-                  GRAPH_STYLE.deleteHighlight.nodeRadiusOffset
-                }
-                fill="none"
-                stroke={GRAPH_STYLE.deleteHighlight.color}
-                strokeWidth={GRAPH_STYLE.deleteHighlight.nodeStrokeWidth}
-                pointerEvents="none"
-              />
-            ) : null}
-            {edgeStartNodeId === node.id ? (
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={SELECTION_RING_RADIUS}
-                fill="none"
-                stroke="#4f46e5"
-                strokeWidth={2}
-                className="transition-opacity"
-              />
-            ) : null}
-            <circle
-              cx={node.x}
-              cy={node.y}
-              r={GRAPH_STYLE.nodeRadius}
-              fill="white"
-              stroke="black"
-              strokeWidth={edgeStartNodeId === node.id ? 3 : 1}
-            />
-            <text
-              x={node.x}
-              y={node.y}
-              textAnchor="middle"
-              dy="0.35em"
-              fontSize={12}
+        {nodes.map((node) => {
+          const isEditing = mode === "idle" && editingNodeId === node.id;
+          return (
+            <g
+              key={node.id}
+              onClick={(event) => handleNodeClick(event, node.id)}
+              onMouseDown={(event) => handleNodeMouseDown(event, node)}
+              onDoubleClick={(event) => handleNodeDoubleClick(event, node)}
+              onMouseEnter={() => handleNodeMouseEnter(node.id)}
+              onMouseLeave={() => handleNodeMouseLeave(node.id)}
+              className={
+                mode === "idle"
+                  ? "cursor-grab active:cursor-grabbing"
+                  : "cursor-pointer"
+              }
             >
-              {node.label}
-            </text>
-          </g>
-        ))}
+              {mode === "delete" && hoveredNodeId === node.id ? (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={
+                    GRAPH_STYLE.nodeRadius +
+                    GRAPH_STYLE.deleteHighlight.nodeRadiusOffset
+                  }
+                  fill="none"
+                  stroke={GRAPH_STYLE.deleteHighlight.color}
+                  strokeWidth={GRAPH_STYLE.deleteHighlight.nodeStrokeWidth}
+                  pointerEvents="none"
+                />
+              ) : null}
+              {edgeStartNodeId === node.id ? (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={SELECTION_RING_RADIUS}
+                  fill="none"
+                  stroke="#4f46e5"
+                  strokeWidth={2}
+                  className="transition-opacity"
+                />
+              ) : null}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={GRAPH_STYLE.nodeRadius}
+                fill="white"
+                stroke="black"
+                strokeWidth={edgeStartNodeId === node.id ? 3 : 1}
+              />
+              {isEditing ? (
+                <foreignObject
+                  x={
+                    editingInputWidth
+                      ? node.x - editingInputWidth / 2
+                      : node.x - GRAPH_STYLE.nodeRadius
+                  }
+                  y={node.y - GRAPH_STYLE.nodeRadius}
+                  width={editingInputWidth ?? GRAPH_STYLE.nodeRadius * 2}
+                  height={GRAPH_STYLE.nodeRadius * 2}
+                >
+                  <div className="flex h-full w-full items-center justify-center">
+                    <input
+                      ref={labelInputRef}
+                      value={editingLabel}
+                      onChange={handleLabelInputChange}
+                      onKeyDown={handleLabelInputKeyDown}
+                      onBlur={handleLabelInputBlur}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onClick={(event) => event.stopPropagation()}
+                      onDoubleClick={(event) => event.stopPropagation()}
+                      spellCheck={false}
+                      className={cn(
+                        "w-full border-none bg-transparent text-center text-xs text-black underline",
+                        "focus:outline-none",
+                      )}
+                    />
+                  </div>
+                </foreignObject>
+              ) : (
+                <text
+                  x={node.x}
+                  y={node.y}
+                  textAnchor="middle"
+                  dy="0.35em"
+                  fontSize={12}
+                >
+                  {node.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
       </svg>
       <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
         <Toolbar
