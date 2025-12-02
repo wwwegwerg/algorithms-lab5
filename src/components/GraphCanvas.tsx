@@ -7,17 +7,15 @@ import React, {
   useState,
 } from "react";
 import { Toolbar } from "@/components/Toolbar";
-import { GRAPH_STYLE, SELECTION_RING_RADIUS } from "@/constants/graph";
 import {
   EDGE_WEIGHT_INPUT_PATTERN,
   EDITING_CHAR_PIXEL_WIDTH,
+  GRAPH_STYLE,
   HIGHLIGHT_ARROW_TRANSFORM,
-} from "@/constants/graphCanvas";
+  SELECTION_RING_RADIUS,
+} from "@/constants/graph";
 import { GRID_CONFIG } from "@/constants/grid";
-import {
-  buildCurvedEdgeGeometry,
-  buildSelfLoopGeometry,
-} from "@/lib/edgeGeometry";
+import { buildCurvedEdgeGeometry, buildSelfLoopGeometry } from "@/lib/edges";
 import { snapToGrid } from "@/lib/grid";
 import { cn } from "@/lib/utils";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
