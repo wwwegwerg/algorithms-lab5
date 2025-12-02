@@ -2,7 +2,6 @@ import { GRAPH_STYLE } from "@/constants/graph";
 import {
   EDGE_WEIGHT_LABEL_OFFSET,
   SELF_LOOP_CENTER_OFFSET,
-  SELF_LOOP_LABEL_OFFSET,
   SELF_LOOP_RADIUS,
 } from "@/constants/graphCanvas";
 import {
@@ -34,7 +33,7 @@ export const buildSelfLoopGeometry = (node: Node): SelfLoopGeometry => {
   ].join(" ");
   const labelPosition = {
     x: loopCenterX,
-    y: loopCenterY - SELF_LOOP_RADIUS - SELF_LOOP_LABEL_OFFSET,
+    y: loopCenterY - SELF_LOOP_RADIUS - EDGE_WEIGHT_LABEL_OFFSET,
   };
   return { pathD, labelPosition };
 };

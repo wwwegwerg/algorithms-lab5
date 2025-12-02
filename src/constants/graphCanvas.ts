@@ -13,8 +13,6 @@ export const SELF_LOOP_RADIUS = Math.hypot(
   SELF_LOOP_CENTER_OFFSET - GRAPH_STYLE.nodeRadius,
 );
 
-export const SELF_LOOP_LABEL_OFFSET = 12;
-
 const ARROW_MARKER_CENTER = { x: 7.5, y: 6 };
 
 const HIGHLIGHT_ARROW_SCALE: number = GRAPH_STYLE.deleteHighlight.arrowScale;
