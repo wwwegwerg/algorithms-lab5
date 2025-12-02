@@ -618,7 +618,7 @@ export function GraphCanvas({
             x: rawNormal.x / rawNormalLength,
             y: rawNormal.y / rawNormalLength,
           };
-          if (labelNormal.y >= 0) {
+          if (labelNormal.y > 0) {
             labelNormal = { x: -labelNormal.x, y: -labelNormal.y };
           }
           const labelPosition = {
@@ -628,9 +628,9 @@ export function GraphCanvas({
           const labelAngleRaw =
             (Math.atan2(labelTangent.y, labelTangent.x) * 180) / Math.PI;
           const labelAngle =
-            labelAngleRaw > 90
+            labelAngleRaw >= 90
               ? labelAngleRaw - 180
-              : labelAngleRaw < -90
+              : labelAngleRaw <= -90
                 ? labelAngleRaw + 180
                 : labelAngleRaw;
           const weightLabel =
