@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GraphCanvas } from "@/components/GraphCanvas";
 import { Sidebar } from "@/components/Sidebar";
 import { validateEdgeConnection } from "@/lib/edges";
+import {
+  buildGraphFromAdjacencyMatrix,
+  formatAdjacencyMatrix,
+  graphToAdjacencyMatrix,
+  parseAdjacencyMatrix,
+  type GraphSnapshot,
+} from "@/lib/graph-io";
 import { snapPointToGrid } from "@/lib/grid";
 import type { Edge, EdgeId, EditMode, Node, NodeId } from "@/types/graph";
 
@@ -16,6 +23,34 @@ function App() {
   const [mode, setMode] = useState<EditMode>("idle");
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<NodeId | null>(null);
   const [nextNodeLabelNumber, setNextNodeLabelNumber] = useState(1);
+  const adjacencyMatrixText = useMemo(() => {
+    const matrix = graphToAdjacencyMatrix(nodes, edges);
+    return formatAdjacencyMatrix(matrix);
+  }, [nodes, edges]);
+  const handleImportMatrix = (raw: string) => {
+    try {
+      const matrix = parseAdjacencyMatrix(raw);
+      const { nodes: importedNodes, edges: importedEdges } =
+        buildGraphFromAdjacencyMatrix(matrix);
+      setNodes(importedNodes);
+      setEdges(importedEdges);
+      setNextNodeLabelNumber(importedNodes.length + 1);
+      setEdgeStartNodeId(null);
+      return { success: true as const };
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Не удалось загрузить матрицу.";
+      return { success: false as const, error: message };
+    }
+  };
+  const handleImportSnapshot = (snapshot: GraphSnapshot) => {
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setNextNodeLabelNumber(snapshot.nodes.length + 1);
+    setEdgeStartNodeId(null);
+  };
 
   const handleCanvasClick = (x: number, y: number) => {
     if (mode !== "add-node") return;
@@ -170,7 +205,13 @@ function App() {
   return (
     <div className="flex h-screen w-screen flex-col">
       <div className="flex min-h-0 flex-1">
-        <Sidebar />
+        <Sidebar
+          nodes={nodes}
+          edges={edges}
+          adjacencyMatrix={adjacencyMatrixText}
+          onImportMatrix={handleImportMatrix}
+          onImportSnapshot={handleImportSnapshot}
+        />
 
         <div className="flex-1 border-l border-gray-300">
           <GraphCanvas
