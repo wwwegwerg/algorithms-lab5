@@ -32,7 +32,10 @@ export function GraphEditor() {
   const lastGraphError = useGraphStore((s) => s.lastError);
 
   const setMode = useGraphStore((s) => s.setMode);
-  const setSelection = useGraphStore((s) => s.setSelection);
+  const clearSelection = useGraphStore((s) => s.clearSelection);
+  const selectNode = useGraphStore((s) => s.selectNode);
+  const selectEdge = useGraphStore((s) => s.selectEdge);
+  const applyBoxSelection = useGraphStore((s) => s.applyBoxSelection);
 
   const addNodeAt = useGraphStore((s) => s.addNodeAt);
   const updateNode = useGraphStore((s) => s.updateNode);
@@ -73,12 +76,12 @@ export function GraphEditor() {
   const overlay = useAlgorithmStore(selectOverlay);
 
   const selectedNode =
-    selection?.kind === "node"
-      ? (nodes.find((n) => n.id === selection.id) ?? null)
+    selection.focus?.kind === "node"
+      ? (nodes.find((n) => n.id === selection.focus?.id) ?? null)
       : null;
   const selectedEdge =
-    selection?.kind === "edge"
-      ? (edges.find((e) => e.id === selection.id) ?? null)
+    selection.focus?.kind === "edge"
+      ? (edges.find((e) => e.id === selection.focus?.id) ?? null)
       : null;
 
   React.useEffect(() => {
@@ -137,14 +140,14 @@ export function GraphEditor() {
         mode={mode}
         edgeDraftSourceId={edgeDraftSourceId}
         overlay={overlay}
-        onBackgroundClick={(p) => {
+        onBackgroundClick={(p, additive) => {
           if (mode === "add_node") {
             addNodeAt(p.x, p.y);
             return;
           }
 
           if (mode === "select") {
-            setSelection(null);
+            if (!additive) clearSelection();
             return;
           }
 
@@ -152,7 +155,7 @@ export function GraphEditor() {
             cancelEdgeDraft();
           }
         }}
-        onNodeClick={(id) => {
+        onNodeClick={(id, additive) => {
           if (mode === "delete") {
             deleteNode(id);
             setPlaying(false);
@@ -172,10 +175,10 @@ export function GraphEditor() {
             return;
           }
 
-          setSelection({ kind: "node", id });
+          selectNode(id, additive);
           if (!startNodeId) setStartNodeId(id);
         }}
-        onEdgeClick={(id) => {
+        onEdgeClick={(id, additive) => {
           if (mode === "delete") {
             deleteEdge(id);
             setPlaying(false);
@@ -183,11 +186,12 @@ export function GraphEditor() {
             return;
           }
 
-          setSelection({ kind: "edge", id });
+          selectEdge(id, additive);
         }}
         onNodeDrag={(id, x, y) => {
           updateNode(id, { x, y });
         }}
+        onBoxSelect={applyBoxSelection}
         onCancelEdgeDraft={() => cancelEdgeDraft()}
       />
 

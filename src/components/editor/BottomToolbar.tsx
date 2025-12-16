@@ -320,7 +320,7 @@ export function BottomToolbar({
               />
             </div>
 
-            {selection?.kind === "node" && selectedNode && (
+            {selection.focus?.kind === "node" && selectedNode && (
               <div className="flex items-center gap-2">
                 <div className="text-xs text-foreground/60">label</div>
                 <Input
@@ -333,7 +333,7 @@ export function BottomToolbar({
               </div>
             )}
 
-            {selection?.kind === "edge" && selectedEdge && (
+            {selection.focus?.kind === "edge" && selectedEdge && (
               <div className="flex items-center gap-2">
                 <div className="text-xs text-foreground/60">
                   {selectedEdge.id}

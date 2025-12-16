@@ -61,11 +61,17 @@ export function InfoOverlay({
           <Field label="edges" value={edgesCount} />
           <Field
             label="selected"
-            value={selection ? `${selection.kind}: ${selection.id}` : "(none)"}
+            value={
+              selection.focus
+                ? `${selection.focus.kind}: ${selection.focus.id}`
+                : "(none)"
+            }
           />
+          <Field label="selectedNodes" value={selection.nodeIds.length} />
+          <Field label="selectedEdges" value={selection.edgeIds.length} />
         </Section>
 
-        {selection?.kind === "node" && node && (
+        {selection.focus?.kind === "node" && node && (
           <Section title="Node">
             <Field label="id" value={node.id} />
             <Field label="label" value={node.label} />
@@ -74,7 +80,7 @@ export function InfoOverlay({
           </Section>
         )}
 
-        {selection?.kind === "edge" && edge && (
+        {selection.focus?.kind === "edge" && edge && (
           <Section title="Edge">
             <Field label="id" value={edge.id} />
             <Field label="directed" value={edge.directed ? "true" : "false"} />

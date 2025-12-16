@@ -6,7 +6,8 @@ import type {
   GraphNode,
   MatrixUnweightedSymbol,
   NodeId,
-  Selection,
+  SelectionItem,
+  SelectionState,
 } from "@/core/graph/types";
 import { isLoop } from "@/core/graph/types";
 import { validateEdgeDraft } from "@/core/graph/validate";
@@ -17,7 +18,7 @@ export type EdgeDraft = { sourceId: NodeId };
 
 export type InteractionState = {
   mode: EditorMode;
-  selection: Selection;
+  selection: SelectionState;
   edgeDraft: EdgeDraft | null;
 };
 
@@ -45,7 +46,15 @@ type GraphActions = {
   clearError: () => void;
 
   setMode: (mode: EditorMode) => void;
-  setSelection: (selection: Selection) => void;
+
+  clearSelection: () => void;
+  selectNode: (id: NodeId, additive: boolean) => void;
+  selectEdge: (id: EdgeId, additive: boolean) => void;
+  applyBoxSelection: (
+    nodeIds: NodeId[],
+    edgeIds: EdgeId[],
+    additive: boolean,
+  ) => void;
 
   setInfoOpen: (open: boolean) => void;
   toggleInfoOpen: () => void;
@@ -80,28 +89,10 @@ type GraphActions = {
   resetGraph: () => void;
 };
 
-const initialState: GraphState = {
-  nodes: [],
-  edges: [],
-
-  interaction: {
-    mode: "select",
-    selection: null,
-    edgeDraft: null,
-  },
-
-  infoOpen: false,
-  helpOpen: false,
-
-  newEdgeDirected: false,
-
-  bottomPanel: "none",
-  matrixUnweightedSymbol: "_",
-
-  lastError: null,
-
-  nextNodeIndex: 1,
-  nextEdgeIndex: 1,
+const emptySelection: SelectionState = {
+  nodeIds: [],
+  edgeIds: [],
+  focus: null,
 };
 
 function nextId(prefix: string, index: number) {
@@ -119,7 +110,63 @@ function computeNextIndex(prefix: string, ids: readonly string[]) {
   return max + 1;
 }
 
-export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
+function removeId<T extends string>(ids: readonly T[], id: T) {
+  return ids.filter((x) => x !== id);
+}
+
+function uniqueAppend<T extends string>(ids: readonly T[], id: T) {
+  if (ids.includes(id)) return [...ids];
+  return [...ids, id];
+}
+
+function toggleId<T extends string>(ids: readonly T[], id: T) {
+  if (ids.includes(id)) return { next: removeId(ids, id), included: false };
+  return { next: [...ids, id], included: true };
+}
+
+function normalizeSelection(selection: SelectionState): SelectionState {
+  if (!selection.focus) return selection;
+
+  if (selection.focus.kind === "node") {
+    if (!selection.nodeIds.includes(selection.focus.id)) {
+      return { ...selection, focus: null };
+    }
+  }
+
+  if (selection.focus.kind === "edge") {
+    if (!selection.edgeIds.includes(selection.focus.id)) {
+      return { ...selection, focus: null };
+    }
+  }
+
+  return selection;
+}
+
+const initialState: GraphState = {
+  nodes: [],
+  edges: [],
+
+  interaction: {
+    mode: "select",
+    selection: emptySelection,
+    edgeDraft: null,
+  },
+
+  infoOpen: false,
+  helpOpen: false,
+
+  newEdgeDirected: false,
+
+  bottomPanel: "none",
+  matrixUnweightedSymbol: "_",
+
+  lastError: null,
+
+  nextNodeIndex: 1,
+  nextEdgeIndex: 1,
+};
+
+export const useGraphStore = create<GraphState & GraphActions>((set) => ({
   ...initialState,
 
   clearError: () => set({ lastError: null }),
@@ -129,23 +176,137 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
       const interaction: InteractionState = { ...s.interaction, mode };
 
       if (mode === "add_edge") {
-        interaction.selection = null;
+        interaction.selection = emptySelection;
         interaction.edgeDraft = null;
       } else {
         interaction.edgeDraft = null;
       }
 
+      return { interaction, lastError: null };
+    }),
+
+  clearSelection: () =>
+    set((s) => ({
+      interaction: {
+        ...s.interaction,
+        selection: emptySelection,
+        edgeDraft: null,
+      },
+      lastError: null,
+    })),
+
+  selectNode: (id, additive) =>
+    set((s) => {
+      if (!additive) {
+        return {
+          interaction: {
+            ...s.interaction,
+            selection: {
+              nodeIds: [id],
+              edgeIds: [],
+              focus: { kind: "node", id },
+            },
+            edgeDraft: null,
+          },
+          lastError: null,
+        };
+      }
+
+      const toggled = toggleId(s.interaction.selection.nodeIds, id);
+      const focus: SelectionItem | null = toggled.included
+        ? { kind: "node", id }
+        : s.interaction.selection.focus?.kind === "node" &&
+            s.interaction.selection.focus.id === id
+          ? null
+          : s.interaction.selection.focus;
+
       return {
-        interaction,
+        interaction: {
+          ...s.interaction,
+          selection: normalizeSelection({
+            nodeIds: toggled.next,
+            edgeIds: s.interaction.selection.edgeIds,
+            focus,
+          }),
+          edgeDraft: null,
+        },
         lastError: null,
       };
     }),
 
-  setSelection: (selection) =>
-    set((s) => ({
-      interaction: { ...s.interaction, selection, edgeDraft: null },
-      lastError: null,
-    })),
+  selectEdge: (id, additive) =>
+    set((s) => {
+      if (!additive) {
+        return {
+          interaction: {
+            ...s.interaction,
+            selection: {
+              nodeIds: [],
+              edgeIds: [id],
+              focus: { kind: "edge", id },
+            },
+            edgeDraft: null,
+          },
+          lastError: null,
+        };
+      }
+
+      const toggled = toggleId(s.interaction.selection.edgeIds, id);
+      const focus: SelectionItem | null = toggled.included
+        ? { kind: "edge", id }
+        : s.interaction.selection.focus?.kind === "edge" &&
+            s.interaction.selection.focus.id === id
+          ? null
+          : s.interaction.selection.focus;
+
+      return {
+        interaction: {
+          ...s.interaction,
+          selection: normalizeSelection({
+            nodeIds: s.interaction.selection.nodeIds,
+            edgeIds: toggled.next,
+            focus,
+          }),
+          edgeDraft: null,
+        },
+        lastError: null,
+      };
+    }),
+
+  applyBoxSelection: (nodeIds, edgeIds, additive) =>
+    set((s) => {
+      const focus: SelectionItem | null =
+        nodeIds.length > 0
+          ? { kind: "node", id: nodeIds[nodeIds.length - 1]! }
+          : edgeIds.length > 0
+            ? { kind: "edge", id: edgeIds[edgeIds.length - 1]! }
+            : additive
+              ? s.interaction.selection.focus
+              : null;
+
+      const selection: SelectionState = additive
+        ? {
+            nodeIds: nodeIds.reduce(
+              (acc, id) => uniqueAppend(acc, id),
+              s.interaction.selection.nodeIds,
+            ),
+            edgeIds: edgeIds.reduce(
+              (acc, id) => uniqueAppend(acc, id),
+              s.interaction.selection.edgeIds,
+            ),
+            focus,
+          }
+        : { nodeIds, edgeIds, focus };
+
+      return {
+        interaction: {
+          ...s.interaction,
+          selection: normalizeSelection(selection),
+          edgeDraft: null,
+        },
+        lastError: null,
+      };
+    }),
 
   setInfoOpen: (open) => set({ infoOpen: open }),
   toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
@@ -162,12 +323,17 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
     set((s) => {
       const id = nextId("n", s.nextNodeIndex);
       const node: GraphNode = { id, label: id, x, y };
+
       return {
         nodes: [...s.nodes, node],
         nextNodeIndex: s.nextNodeIndex + 1,
         interaction: {
           ...s.interaction,
-          selection: { kind: "node", id },
+          selection: {
+            nodeIds: [id],
+            edgeIds: [],
+            focus: { kind: "node", id },
+          },
           edgeDraft: null,
         },
         lastError: null,
@@ -184,11 +350,18 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
       const nodes = s.nodes.filter((n) => n.id !== id);
       const edges = s.edges.filter((e) => e.source !== id && e.target !== id);
 
-      const selection =
-        s.interaction.selection?.kind === "node" &&
-        s.interaction.selection.id === id
-          ? null
-          : s.interaction.selection;
+      const remainingNodeIds = new Set(nodes.map((n) => n.id));
+      const remainingEdgeIds = new Set(edges.map((e) => e.id));
+
+      const selection: SelectionState = normalizeSelection({
+        nodeIds: s.interaction.selection.nodeIds.filter((nid) =>
+          remainingNodeIds.has(nid),
+        ),
+        edgeIds: s.interaction.selection.edgeIds.filter((eid) =>
+          remainingEdgeIds.has(eid),
+        ),
+        focus: s.interaction.selection.focus,
+      });
 
       const edgeDraft =
         s.interaction.edgeDraft?.sourceId === id
@@ -207,7 +380,7 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
     set((s) => ({
       interaction: {
         ...s.interaction,
-        selection: null,
+        selection: emptySelection,
         edgeDraft: { sourceId: id },
       },
       lastError: null,
@@ -240,15 +413,17 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
       const id = nextId("e", s.nextEdgeIndex);
       const edge: GraphEdge = { id, ...draft };
 
-      const selection: Selection = { kind: "edge", id };
-
       return {
         ...s,
         edges: [...s.edges, edge],
         nextEdgeIndex: s.nextEdgeIndex + 1,
         interaction: {
           ...s.interaction,
-          selection,
+          selection: {
+            nodeIds: [],
+            edgeIds: [id],
+            focus: { kind: "edge", id },
+          },
           edgeDraft: null,
         },
         lastError: null,
@@ -291,32 +466,63 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
 
   deleteEdge: (id) =>
     set((s) => {
-      const selection =
-        s.interaction.selection?.kind === "edge" &&
-        s.interaction.selection.id === id
-          ? null
-          : s.interaction.selection;
+      const edges = s.edges.filter((e) => e.id !== id);
+      const remainingEdgeIds = new Set(edges.map((e) => e.id));
+
+      const selection: SelectionState = normalizeSelection({
+        nodeIds: s.interaction.selection.nodeIds,
+        edgeIds: s.interaction.selection.edgeIds.filter((eid) =>
+          remainingEdgeIds.has(eid),
+        ),
+        focus: s.interaction.selection.focus,
+      });
 
       return {
-        edges: s.edges.filter((e) => e.id !== id),
+        edges,
         interaction: { ...s.interaction, selection },
         lastError: null,
       };
     }),
 
-  deleteSelection: () => {
-    const selection = get().interaction.selection;
-    if (!selection) return;
+  deleteSelection: () =>
+    set((s) => {
+      const selectedNodeIds = new Set(s.interaction.selection.nodeIds);
+      const selectedEdgeIds = new Set(s.interaction.selection.edgeIds);
 
-    if (selection.kind === "node") get().deleteNode(selection.id);
-    if (selection.kind === "edge") get().deleteEdge(selection.id);
-  },
+      if (selectedNodeIds.size === 0 && selectedEdgeIds.size === 0) return s;
+
+      const nodes = s.nodes.filter((n) => !selectedNodeIds.has(n.id));
+      const edges = s.edges.filter(
+        (e) =>
+          !selectedEdgeIds.has(e.id) &&
+          !selectedNodeIds.has(e.source) &&
+          !selectedNodeIds.has(e.target),
+      );
+
+      const edgeDraft =
+        s.interaction.edgeDraft &&
+        selectedNodeIds.has(s.interaction.edgeDraft.sourceId)
+          ? null
+          : s.interaction.edgeDraft;
+
+      return {
+        nodes,
+        edges,
+        interaction: { ...s.interaction, selection: emptySelection, edgeDraft },
+        lastError: null,
+      };
+    }),
 
   setGraph: (nodes, edges) =>
     set((s) => ({
       nodes,
       edges,
-      interaction: { ...s.interaction, selection: null, edgeDraft: null },
+      interaction: {
+        ...s.interaction,
+        mode: "select",
+        selection: emptySelection,
+        edgeDraft: null,
+      },
       lastError: null,
       nextNodeIndex: computeNextIndex(
         "n",

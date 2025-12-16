@@ -33,7 +33,7 @@ export function Edge(props: EdgeProps) {
 
   const { edge, d, labelPoint, selection, activeEdgeId, onPointerDown } = props;
 
-  const selected = selection?.kind === "edge" && selection.id === edge.id;
+  const selected = selection.edgeIds.includes(edge.id);
   const emphasized = activeEdgeId === edge.id;
 
   const label = edge.weight === undefined ? "" : String(edge.weight);

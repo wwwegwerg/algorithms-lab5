@@ -32,7 +32,7 @@ export function Node({
   isActive,
   onPointerDown,
 }: NodeProps) {
-  const isSelected = selection?.kind === "node" && selection.id === node.id;
+  const isSelected = selection.nodeIds.includes(node.id);
   const isDraftSource = mode === "add_edge" && edgeDraftSourceId === node.id;
 
   const showRing = isDraftSource || isSelected;

@@ -25,10 +25,17 @@ export type GraphSnapshot = {
   };
 };
 
-export type Selection =
+export type SelectionItem =
   | { kind: "node"; id: NodeId }
-  | { kind: "edge"; id: EdgeId }
-  | null;
+  | { kind: "edge"; id: EdgeId };
+
+export type SelectionState = {
+  nodeIds: NodeId[];
+  edgeIds: EdgeId[];
+  focus: SelectionItem | null;
+};
+
+export type Selection = SelectionState;
 
 export type EditorMode = "select" | "add_node" | "add_edge" | "delete";
 

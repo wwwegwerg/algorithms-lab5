@@ -16,6 +16,41 @@ function vecLen(dx: number, dy: number) {
   return Math.hypot(dx, dy);
 }
 
+type BoxSelect = {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  additive: boolean;
+};
+
+function normalizeBox(box: BoxSelect) {
+  const minX = Math.min(box.start.x, box.end.x);
+  const minY = Math.min(box.start.y, box.end.y);
+  const maxX = Math.max(box.start.x, box.end.x);
+  const maxY = Math.max(box.start.y, box.end.y);
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+    minX,
+    minY,
+    maxX,
+    maxY,
+  };
+}
+
+function pointInBox(
+  point: { x: number; y: number },
+  box: ReturnType<typeof normalizeBox>,
+) {
+  return (
+    point.x >= box.minX &&
+    point.x <= box.maxX &&
+    point.y >= box.minY &&
+    point.y <= box.maxY
+  );
+}
+
 function edgePath(
   edge: GraphEdge,
   nodesById: Map<string, GraphNode>,
@@ -112,9 +147,17 @@ export type GraphCanvasProps = {
 
   overlay: OverlayState | null;
 
-  onBackgroundClick: (point: { x: number; y: number }) => void;
-  onNodeClick: (id: NodeId) => void;
-  onEdgeClick: (id: string) => void;
+  onBackgroundClick: (
+    point: { x: number; y: number },
+    additive: boolean,
+  ) => void;
+  onNodeClick: (id: NodeId, additive: boolean) => void;
+  onEdgeClick: (id: string, additive: boolean) => void;
+  onBoxSelect: (
+    nodeIds: NodeId[],
+    edgeIds: string[],
+    additive: boolean,
+  ) => void;
 
   onNodeDrag: (id: NodeId, x: number, y: number) => void;
 
@@ -132,6 +175,7 @@ export function GraphCanvas({
   onBackgroundClick,
   onNodeClick,
   onEdgeClick,
+  onBoxSelect,
   onNodeDrag,
   onCancelEdgeDraft,
 }: GraphCanvasProps) {
@@ -145,6 +189,7 @@ export function GraphCanvas({
     x: number;
     y: number;
   } | null>(null);
+  const [boxSelect, setBoxSelect] = React.useState<BoxSelect | null>(null);
 
   const nodesById = React.useMemo(
     () => new Map(nodes.map((n) => [n.id, n])),
@@ -200,6 +245,8 @@ export function GraphCanvas({
       ? (nodesById.get(edgeDraftSourceId) ?? null)
       : null;
 
+  const boxRect = boxSelect ? normalizeBox(boxSelect) : null;
+
   const draftPathD = React.useMemo(() => {
     if (!draftSourceNode) return null;
     if (!cursorPoint) return null;
@@ -228,6 +275,11 @@ export function GraphCanvas({
       onPointerMove={(e) => {
         const p = toSvgPoint(e.clientX, e.clientY);
 
+        if (boxSelect && p) {
+          setBoxSelect({ ...boxSelect, end: p });
+          return;
+        }
+
         if (mode === "add_edge" && edgeDraftSourceId) {
           setCursorPoint(p);
         }
@@ -236,15 +288,50 @@ export function GraphCanvas({
         if (!p) return;
         onNodeDrag(dragging.id, p.x - dragging.dx, p.y - dragging.dy);
       }}
-      onPointerUp={() => setDragging(null)}
-      onPointerLeave={() => setDragging(null)}
+      onPointerUp={() => {
+        setDragging(null);
+
+        if (!boxSelect) return;
+
+        const rect = normalizeBox(boxSelect);
+        const nodeIds = nodes
+          .filter((n) => pointInBox({ x: n.x, y: n.y }, rect))
+          .map((n) => n.id);
+
+        const edgeIds = edges
+          .filter((edge) => {
+            const s = nodesById.get(edge.source);
+            const t = nodesById.get(edge.target);
+            if (!s || !t) return false;
+
+            if (pointInBox({ x: s.x, y: s.y }, rect)) return true;
+            if (pointInBox({ x: t.x, y: t.y }, rect)) return true;
+
+            const lp = edgeLabelPoint(edge, nodesById, hasOpposite(edge));
+            return lp ? pointInBox(lp, rect) : false;
+          })
+          .map((e) => e.id);
+
+        onBoxSelect(nodeIds, edgeIds, boxSelect.additive);
+        setBoxSelect(null);
+      }}
+      onPointerLeave={() => {
+        setDragging(null);
+        setBoxSelect(null);
+      }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         if (e.target !== e.currentTarget) return;
 
         const p = toSvgPoint(e.clientX, e.clientY);
         if (!p) return;
-        onBackgroundClick(p);
+
+        if (mode === "select") {
+          setBoxSelect({ start: p, end: p, additive: e.shiftKey });
+          return;
+        }
+
+        onBackgroundClick(p, e.shiftKey);
       }}
     >
       <defs>
@@ -274,6 +361,18 @@ export function GraphCanvas({
         </marker>
       </defs>
 
+      {boxRect && (
+        <rect
+          x={boxRect.x}
+          y={boxRect.y}
+          width={boxRect.width}
+          height={boxRect.height}
+          className="fill-primary/10 stroke-primary"
+          strokeWidth={1}
+          strokeDasharray="4 3"
+        />
+      )}
+
       {/* Edges */}
       {edges.map((e) => {
         const d = edgePath(e, nodesById, hasOpposite(e));
@@ -290,7 +389,7 @@ export function GraphCanvas({
             activeEdgeId={activeEdgeId}
             onPointerDown={(ev) => {
               ev.stopPropagation();
-              onEdgeClick(e.id);
+              onEdgeClick(e.id, ev.shiftKey);
             }}
           />
         );
@@ -313,14 +412,14 @@ export function GraphCanvas({
           onPointerDown={(e) => {
             e.stopPropagation();
 
-            if (mode === "select") {
+            if (mode === "select" && !e.shiftKey) {
               const p = toSvgPoint(e.clientX, e.clientY);
               if (p) {
                 setDragging({ id: n.id, dx: p.x - n.x, dy: p.y - n.y });
               }
             }
 
-            onNodeClick(n.id);
+            onNodeClick(n.id, e.shiftKey);
           }}
         />
       ))}

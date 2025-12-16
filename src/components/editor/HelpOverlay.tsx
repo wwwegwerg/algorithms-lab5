@@ -63,7 +63,16 @@ export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
 
         <Section title="Mouse">
           <Row left="select: drag node" right="переместить вершину" />
-          <Row left="select: click blank" right="снять выделение" />
+          <Row left="select: drag blank" right="прямоугольное выделение" />
+          <Row
+            left={
+              <>
+                <Kbd>Shift</Kbd> + select: click/drag
+              </>
+            }
+            right="добавить к выделению"
+          />
+          <Row left="select: click blank" right="очистить выделение" />
           <Row left="edge: click blank" right="отменить выбор source" />
         </Section>
 
@@ -74,7 +83,7 @@ export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
                 <Kbd>Delete</Kbd> / <Kbd>Backspace</Kbd>
               </>
             }
-            right="удалить выделенное"
+            right="удалить выделенное (все выбранные)"
           />
           <Row
             left={<Kbd>Esc</Kbd>}
