@@ -18,10 +18,12 @@ export function GraphEditor() {
   const nodes = useGraphStore((s) => s.nodes);
   const edges = useGraphStore((s) => s.edges);
 
-  const mode = useGraphStore((s) => s.mode);
-  const selection = useGraphStore((s) => s.selection);
+  const mode = useGraphStore((s) => s.interaction.mode);
+  const selection = useGraphStore((s) => s.interaction.selection);
 
-  const addEdgeSourceId = useGraphStore((s) => s.addEdgeSourceId);
+  const edgeDraftSourceId = useGraphStore(
+    (s) => s.interaction.edgeDraft?.sourceId ?? null,
+  );
   const newEdgeDirected = useGraphStore((s) => s.newEdgeDirected);
 
   const bottomPanel = useGraphStore((s) => s.bottomPanel);
@@ -133,7 +135,7 @@ export function GraphEditor() {
         edges={edges}
         selection={selection}
         mode={mode}
-        addEdgeSourceId={addEdgeSourceId}
+        edgeDraftSourceId={edgeDraftSourceId}
         overlay={overlay}
         onBackgroundClick={(p) => {
           if (mode === "add_node") {
@@ -159,7 +161,7 @@ export function GraphEditor() {
           }
 
           if (mode === "add_edge") {
-            if (!addEdgeSourceId) {
+            if (!edgeDraftSourceId) {
               startEdgeFrom(id);
               return;
             }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Edge, Node } from "@/components/editor/canvas";
 import type { OverlayState } from "@/core/algorithms/types";
 import type {
   GraphEdge,
@@ -107,7 +108,7 @@ export type GraphCanvasProps = {
   selection: Selection;
   mode: "select" | "add_node" | "add_edge" | "delete";
 
-  addEdgeSourceId: NodeId | null;
+  edgeDraftSourceId: NodeId | null;
 
   overlay: OverlayState | null;
 
@@ -126,7 +127,7 @@ export function GraphCanvas({
   edges,
   selection,
   mode,
-  addEdgeSourceId,
+  edgeDraftSourceId,
   overlay,
   onBackgroundClick,
   onNodeClick,
@@ -185,9 +186,9 @@ export function GraphCanvas({
   }, [onCancelEdgeDraft]);
 
   React.useEffect(() => {
-    if (mode === "add_edge" && addEdgeSourceId) return;
+    if (mode === "add_edge" && edgeDraftSourceId) return;
     setCursorPoint(null);
-  }, [addEdgeSourceId, mode]);
+  }, [edgeDraftSourceId, mode]);
 
   const visited = new Set(overlay?.visitedNodeIds ?? []);
   const frontier = new Set(overlay?.frontierNodeIds ?? []);
@@ -195,8 +196,8 @@ export function GraphCanvas({
   const activeEdgeId = overlay?.activeEdgeId;
 
   const draftSourceNode =
-    mode === "add_edge" && addEdgeSourceId
-      ? (nodesById.get(addEdgeSourceId) ?? null)
+    mode === "add_edge" && edgeDraftSourceId
+      ? (nodesById.get(edgeDraftSourceId) ?? null)
       : null;
 
   const draftPathD = React.useMemo(() => {
@@ -227,7 +228,7 @@ export function GraphCanvas({
       onPointerMove={(e) => {
         const p = toSvgPoint(e.clientX, e.clientY);
 
-        if (mode === "add_edge" && addEdgeSourceId) {
+        if (mode === "add_edge" && edgeDraftSourceId) {
           setCursorPoint(p);
         }
 
@@ -278,136 +279,51 @@ export function GraphCanvas({
         const d = edgePath(e, nodesById, hasOpposite(e));
         if (!d) return null;
 
-        const selected = selection?.kind === "edge" && selection.id === e.id;
-        const emphasized = activeEdgeId === e.id;
-
-        const labelPoint = edgeLabelPoint(e, nodesById, hasOpposite(e));
-        const label = e.weight === undefined ? "" : String(e.weight);
-
         return (
-          <g key={e.id}>
-            <path
-              d={d}
-              className={cn(
-                "fill-none",
-                emphasized || selected
-                  ? "stroke-primary"
-                  : "stroke-muted-foreground",
-              )}
-              strokeWidth={2}
-              markerEnd={
-                e.directed
-                  ? emphasized || selected
-                    ? "url(#arrow-primary)"
-                    : "url(#arrow-default)"
-                  : undefined
-              }
-            />
-            <path
-              d={d}
-              className="fill-none stroke-transparent"
-              strokeWidth={14}
-              onPointerDown={(ev) => {
-                ev.stopPropagation();
-                onEdgeClick(e.id);
-              }}
-            />
-            {labelPoint && label.length > 0 && (
-              <text
-                x={labelPoint.x}
-                y={labelPoint.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="pointer-events-none fill-foreground text-xs"
-              >
-                {label}
-              </text>
-            )}
-          </g>
+          <Edge
+            key={e.id}
+            variant="edge"
+            edge={e}
+            d={d}
+            labelPoint={edgeLabelPoint(e, nodesById, hasOpposite(e))}
+            selection={selection}
+            activeEdgeId={activeEdgeId}
+            onPointerDown={(ev) => {
+              ev.stopPropagation();
+              onEdgeClick(e.id);
+            }}
+          />
         );
       })}
 
       {/* Draft edge */}
-      {draftPathD && (
-        <path
-          d={draftPathD}
-          className="fill-none stroke-primary/40"
-          strokeWidth={2}
-          strokeDasharray="6 4"
-        />
-      )}
+      {draftPathD && <Edge variant="draft" d={draftPathD} />}
 
       {/* Nodes */}
-      {nodes.map((n) => {
-        const selected = selection?.kind === "node" && selection.id === n.id;
-        const isVisited = visited.has(n.id);
-        const isFrontier = frontier.has(n.id);
-        const isActive = active.has(n.id);
+      {nodes.map((n) => (
+        <Node
+          key={n.id}
+          node={n}
+          mode={mode}
+          selection={selection}
+          edgeDraftSourceId={edgeDraftSourceId}
+          isVisited={visited.has(n.id)}
+          isFrontier={frontier.has(n.id)}
+          isActive={active.has(n.id)}
+          onPointerDown={(e) => {
+            e.stopPropagation();
 
-        return (
-          <g
-            key={n.id}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-
-              if (mode === "select") {
-                const p = toSvgPoint(e.clientX, e.clientY);
-                if (p) {
-                  setDragging({ id: n.id, dx: p.x - n.x, dy: p.y - n.y });
-                }
+            if (mode === "select") {
+              const p = toSvgPoint(e.clientX, e.clientY);
+              if (p) {
+                setDragging({ id: n.id, dx: p.x - n.x, dy: p.y - n.y });
               }
+            }
 
-              onNodeClick(n.id);
-            }}
-          >
-            <circle
-              cx={n.x}
-              cy={n.y}
-              r={NODE_R}
-              className={cn(
-                "fill-background",
-                isVisited && "fill-accent",
-                isFrontier && "fill-secondary",
-                isActive && "fill-primary",
-                selected ? "stroke-primary" : "stroke-muted-foreground",
-              )}
-              strokeWidth={2}
-            />
-            {selected && (
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r={NODE_R + 5}
-                className="fill-none stroke-primary/30"
-                strokeWidth={2}
-              />
-            )}
-            <text
-              x={n.x}
-              y={n.y}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className={cn(
-                "pointer-events-none text-xs select-none",
-                isActive ? "fill-primary-foreground" : "fill-foreground",
-              )}
-            >
-              {n.label}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Helpers */}
-      {draftSourceNode && (
-        <circle
-          cx={draftSourceNode.x}
-          cy={draftSourceNode.y}
-          r={NODE_R + 7}
-          className="fill-none stroke-primary/40"
-          strokeWidth={2}
+            onNodeClick(n.id);
+          }}
         />
-      )}
+      ))}
     </svg>
   );
 }

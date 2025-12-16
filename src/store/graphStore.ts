@@ -13,17 +13,23 @@ import { validateEdgeDraft } from "@/core/graph/validate";
 
 export type BottomPanel = "none" | "adjacency" | "incidence";
 
+export type EdgeDraft = { sourceId: NodeId };
+
+export type InteractionState = {
+  mode: EditorMode;
+  selection: Selection;
+  edgeDraft: EdgeDraft | null;
+};
+
 type GraphState = {
   nodes: GraphNode[];
   edges: GraphEdge[];
 
-  mode: EditorMode;
-  selection: Selection;
+  interaction: InteractionState;
 
   infoOpen: boolean;
   helpOpen: boolean;
 
-  addEdgeSourceId: NodeId | null;
   newEdgeDirected: boolean;
 
   bottomPanel: BottomPanel;
@@ -78,13 +84,15 @@ const initialState: GraphState = {
   nodes: [],
   edges: [],
 
-  mode: "select",
-  selection: null,
+  interaction: {
+    mode: "select",
+    selection: null,
+    edgeDraft: null,
+  },
 
   infoOpen: false,
   helpOpen: false,
 
-  addEdgeSourceId: null,
   newEdgeDirected: false,
 
   bottomPanel: "none",
@@ -117,14 +125,27 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
   clearError: () => set({ lastError: null }),
 
   setMode: (mode) =>
+    set((s) => {
+      const interaction: InteractionState = { ...s.interaction, mode };
+
+      if (mode === "add_edge") {
+        interaction.selection = null;
+        interaction.edgeDraft = null;
+      } else {
+        interaction.edgeDraft = null;
+      }
+
+      return {
+        interaction,
+        lastError: null,
+      };
+    }),
+
+  setSelection: (selection) =>
     set((s) => ({
-      mode,
-      addEdgeSourceId: mode === "add_edge" ? s.addEdgeSourceId : null,
-      selection: mode === "add_edge" ? s.selection : s.selection,
+      interaction: { ...s.interaction, selection, edgeDraft: null },
       lastError: null,
     })),
-
-  setSelection: (selection) => set({ selection, lastError: null }),
 
   setInfoOpen: (open) => set({ infoOpen: open }),
   toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
@@ -144,7 +165,11 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
       return {
         nodes: [...s.nodes, node],
         nextNodeIndex: s.nextNodeIndex + 1,
-        selection: { kind: "node", id },
+        interaction: {
+          ...s.interaction,
+          selection: { kind: "node", id },
+          edgeDraft: null,
+        },
         lastError: null,
       };
     }),
@@ -158,29 +183,47 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
     set((s) => {
       const nodes = s.nodes.filter((n) => n.id !== id);
       const edges = s.edges.filter((e) => e.source !== id && e.target !== id);
+
       const selection =
-        s.selection?.kind === "node" && s.selection.id === id
+        s.interaction.selection?.kind === "node" &&
+        s.interaction.selection.id === id
           ? null
-          : s.selection;
+          : s.interaction.selection;
+
+      const edgeDraft =
+        s.interaction.edgeDraft?.sourceId === id
+          ? null
+          : s.interaction.edgeDraft;
 
       return {
         nodes,
         edges,
-        selection,
-        addEdgeSourceId: s.addEdgeSourceId === id ? null : s.addEdgeSourceId,
+        interaction: { ...s.interaction, selection, edgeDraft },
         lastError: null,
       };
     }),
 
-  startEdgeFrom: (id) => set({ addEdgeSourceId: id, lastError: null }),
+  startEdgeFrom: (id) =>
+    set((s) => ({
+      interaction: {
+        ...s.interaction,
+        selection: null,
+        edgeDraft: { sourceId: id },
+      },
+      lastError: null,
+    })),
 
-  cancelEdgeDraft: () => set({ addEdgeSourceId: null, lastError: null }),
+  cancelEdgeDraft: () =>
+    set((s) => ({
+      interaction: { ...s.interaction, edgeDraft: null },
+      lastError: null,
+    })),
 
   setNewEdgeDirected: (directed) => set({ newEdgeDirected: directed }),
 
   addEdgeTo: (targetId) =>
     set((s) => {
-      const sourceId = s.addEdgeSourceId;
+      const sourceId = s.interaction.edgeDraft?.sourceId;
       if (!sourceId) return s;
 
       const draft = {
@@ -203,8 +246,11 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
         ...s,
         edges: [...s.edges, edge],
         nextEdgeIndex: s.nextEdgeIndex + 1,
-        addEdgeSourceId: null,
-        selection,
+        interaction: {
+          ...s.interaction,
+          selection,
+          edgeDraft: null,
+        },
         lastError: null,
       };
     }),
@@ -244,17 +290,22 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
     }),
 
   deleteEdge: (id) =>
-    set((s) => ({
-      edges: s.edges.filter((e) => e.id !== id),
-      selection:
-        s.selection?.kind === "edge" && s.selection.id === id
+    set((s) => {
+      const selection =
+        s.interaction.selection?.kind === "edge" &&
+        s.interaction.selection.id === id
           ? null
-          : s.selection,
-      lastError: null,
-    })),
+          : s.interaction.selection;
+
+      return {
+        edges: s.edges.filter((e) => e.id !== id),
+        interaction: { ...s.interaction, selection },
+        lastError: null,
+      };
+    }),
 
   deleteSelection: () => {
-    const { selection } = get();
+    const selection = get().interaction.selection;
     if (!selection) return;
 
     if (selection.kind === "node") get().deleteNode(selection.id);
@@ -262,11 +313,10 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
   },
 
   setGraph: (nodes, edges) =>
-    set(() => ({
+    set((s) => ({
       nodes,
       edges,
-      selection: null,
-      addEdgeSourceId: null,
+      interaction: { ...s.interaction, selection: null, edgeDraft: null },
       lastError: null,
       nextNodeIndex: computeNextIndex(
         "n",
