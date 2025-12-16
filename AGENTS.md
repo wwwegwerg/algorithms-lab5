@@ -2,22 +2,20 @@
 
 ## Commands
 
-- Install: `npm ci` (preferred) or `npm install`
-- Dev server: `npm run dev`
-- Build (typecheck + bundle): `npm run build` (runs `tsc -b && vite build`)
-- Lint: `npm run lint` (runs `eslint .`)
-- Lint single file: `npx eslint src/path/to/file.tsx`
+- Install: `npm ci` (or `npm install`)
+- Dev: `npm run dev`
+- Typecheck: `npx tsc -b`
+- Build: `npm run build` (`tsc -b && vite build`)
+- Lint: `npm run lint` (single file: `npx eslint src/.../file.tsx`)
 - Format: `npx prettier -w .` (check: `npx prettier --check .`)
-- Tests: none configured in this repo yet (no `test` script)
+- Test: not configured (no `test` script / runner); single-test: n/a
 
-## Code Style
+## Code style
 
-- TypeScript + React (ESM); keep types strict; avoid `any`.
-- Prefer `@/` alias for `src/*`; avoid deep relative imports.
-- Let Prettier sort imports (see `prettier.config.js`); use `import type` for type-only imports.
-- Formatting: 2 spaces, 80 cols, double quotes, semicolons, trailing commas.
-- Tailwind: compose className with `cn()` from `src/lib/utils.ts`.
-- Prefer single function bodies unless logic is reusable/composable.
-- Avoid unnecessary destructuring; avoid `else` and avoid `try/catch` where possible.
-- Prefer `const` over `let`; prefer single-word variable names when clarity allows.
-- No Cursor/Copilot rules found in `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md`.
+- TS strict: avoid `any`; validate `unknown` with type guards (see `src/core/io/graphFile.ts`).
+- Imports: use `@/` alias; use `import type`; let Prettier sort imports (`prettier.config.js`).
+- Formatting: Prettier defaults (80 cols, semicolons, trailing commas, LF); don’t fight it.
+- React: function components + hooks; keep render logic simple; avoid IIFEs in JSX; use `cond && (...)`.
+- Tailwind: compose class names with `cn()` from `src/lib/utils.ts`.
+- Error handling: prefer `{ ok: true/false, ... }` results or store `lastError`; avoid thrown errors for UI flow.
+- Rules: no Cursor/Copilot instructions found in `.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`.
