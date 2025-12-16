@@ -12,6 +12,7 @@ type AlgorithmState = {
   playIntervalMs: number;
 
   lastError: string | null;
+  errorNonce: number;
 };
 
 type AlgorithmActions = {
@@ -41,6 +42,7 @@ const initialState: AlgorithmState = {
   playIntervalMs: 600,
 
   lastError: null,
+  errorNonce: 0,
 };
 
 export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
@@ -65,7 +67,12 @@ export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
     setPlaying: (playing) => set({ isPlaying: playing }),
     setPlayIntervalMs: (ms) => set({ playIntervalMs: ms }),
 
-    setError: (message) => set({ lastError: message }),
+    setError: (message) =>
+      set((s) =>
+        message === null
+          ? { lastError: null }
+          : { lastError: message, errorNonce: s.errorNonce + 1 },
+      ),
   }),
 );
 

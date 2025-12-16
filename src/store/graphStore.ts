@@ -42,6 +42,7 @@ type GraphState = {
   matrixUnweightedSymbol: MatrixUnweightedSymbol;
 
   lastError: string | null;
+  errorNonce: number;
 
   nextNodeIndex: number;
   nextEdgeIndex: number;
@@ -186,6 +187,7 @@ const initialState: GraphState = {
   matrixUnweightedSymbol: "_",
 
   lastError: null,
+  errorNonce: 0,
 
   nextNodeIndex: 1,
   nextEdgeIndex: 1,
@@ -436,7 +438,11 @@ export const useGraphStore = create<GraphState & GraphActions>()(
 
           const validation = validateEdgeDraft(s.nodes, s.edges, draft);
           if (!validation.ok) {
-            return { ...s, lastError: validation.message };
+            return {
+              ...s,
+              lastError: validation.message,
+              errorNonce: s.errorNonce + 1,
+            };
           }
 
           const id = nextId("e", s.nextEdgeIndex);
@@ -483,7 +489,11 @@ export const useGraphStore = create<GraphState & GraphActions>()(
           );
 
           if (!validation.ok) {
-            return { ...s, lastError: validation.message };
+            return {
+              ...s,
+              lastError: validation.message,
+              errorNonce: s.errorNonce + 1,
+            };
           }
 
           return {

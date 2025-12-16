@@ -80,8 +80,6 @@ export type BottomToolbarProps = {
   playIntervalMs: number;
   onChangePlayIntervalMs: (ms: number) => void;
 
-  message: string | null;
-
   selection: Selection;
   selectedNode: GraphNode | null;
   selectedEdge: GraphEdge | null;
@@ -116,7 +114,6 @@ export function BottomToolbar({
   onNext,
   playIntervalMs,
   onChangePlayIntervalMs,
-  message,
   selection,
   selectedNode,
   selectedEdge,
@@ -138,149 +135,153 @@ export function BottomToolbar({
         className,
       )}
     >
-      <Card className="pointer-events-auto mx-auto max-w-[1200px]">
-        <div className="flex flex-wrap items-center gap-2 p-2">
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant={mode === "select" ? "default" : "outline"}
-              onClick={() => onChangeMode("select")}
-              title="Select"
-            >
-              <MousePointer2Icon />
-            </Button>
-            <Button
-              size="sm"
-              variant={mode === "add_node" ? "default" : "outline"}
-              onClick={() => onChangeMode("add_node")}
-              title="Node"
-            >
-              <CirclePlusIcon />
-            </Button>
-            <Button
-              size="sm"
-              variant={mode === "add_edge" ? "default" : "outline"}
-              onClick={() => onChangeMode("add_edge")}
-              title="Edge"
-            >
-              <Link2Icon />
-            </Button>
-            <Button
-              size="sm"
-              variant={mode === "delete" ? "destructive" : "outline"}
-              onClick={() => onChangeMode("delete")}
-              title="Delete"
-            >
-              <Trash2Icon />
-            </Button>
+      <div className="pointer-events-auto mx-auto flex max-w-[1200px] flex-wrap items-end justify-center gap-2">
+        <Card size="sm" className="gap-0 py-0">
+          <div className="flex items-center gap-2 p-2">
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant={mode === "select" ? "default" : "outline"}
+                onClick={() => onChangeMode("select")}
+                title="Select"
+              >
+                <MousePointer2Icon />
+              </Button>
+              <Button
+                size="sm"
+                variant={mode === "add_node" ? "default" : "outline"}
+                onClick={() => onChangeMode("add_node")}
+                title="Node"
+              >
+                <CirclePlusIcon />
+              </Button>
+              <Button
+                size="sm"
+                variant={mode === "add_edge" ? "default" : "outline"}
+                onClick={() => onChangeMode("add_edge")}
+                title="Edge"
+              >
+                <Link2Icon />
+              </Button>
+              <Button
+                size="sm"
+                variant={mode === "delete" ? "destructive" : "outline"}
+                onClick={() => onChangeMode("delete")}
+                title="Delete"
+              >
+                <Trash2Icon />
+              </Button>
+            </div>
+
+            <Separator orientation="vertical" className="mx-1 h-7" />
+
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant={newEdgeDirected ? "default" : "outline"}
+                onClick={() => onChangeNewEdgeDirected(true)}
+              >
+                Directed
+              </Button>
+              <Button
+                size="sm"
+                variant={!newEdgeDirected ? "default" : "outline"}
+                onClick={() => onChangeNewEdgeDirected(false)}
+              >
+                Undirected
+              </Button>
+            </div>
           </div>
+        </Card>
 
-          <Separator orientation="vertical" className="mx-1 h-7" />
+        <Card size="sm" className="gap-0 py-0">
+          <div className="flex items-center gap-2 p-2">
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" onClick={onSaveJson}>
+                <DownloadIcon />
+                Save
+              </Button>
 
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant={newEdgeDirected ? "default" : "outline"}
-              onClick={() => onChangeNewEdgeDirected(true)}
-            >
-              Directed
-            </Button>
-            <Button
-              size="sm"
-              variant={!newEdgeDirected ? "default" : "outline"}
-              onClick={() => onChangeNewEdgeDirected(false)}
-            >
-              Undirected
-            </Button>
-          </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => inputRef.current?.click()}
+              >
+                <UploadIcon />
+                Load
+              </Button>
 
-          <Separator orientation="vertical" className="mx-1 h-7" />
+              <AlertDialog>
+                <AlertDialogTrigger
+                  render={
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      title="Очистить сохранение"
+                    >
+                      <Trash2Icon />
+                      Clear canvas
+                    </Button>
+                  }
+                />
+                <AlertDialogContent size="sm">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Очистить сохранение?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Это удалит сохранённый граф из браузера. Действие нельзя
+                      отменить.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Отмена</AlertDialogCancel>
+                    <AlertDialogCancel
+                      variant="destructive"
+                      onClick={onClearPersistedGraph}
+                    >
+                      Очистить
+                    </AlertDialogCancel>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
-          <div className="flex items-center gap-1">
-            <Button size="sm" variant="outline" onClick={onSaveJson}>
-              <DownloadIcon />
-              Save
-            </Button>
-
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => inputRef.current?.click()}
-            >
-              <UploadIcon />
-              Load
-            </Button>
-
-            <AlertDialog>
-              <AlertDialogTrigger
-                render={
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    title="Очистить сохранение"
-                  >
-                    <Trash2Icon />
-                    Clear
-                  </Button>
-                }
+              <input
+                ref={inputRef}
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onLoadJson(file);
+                  e.currentTarget.value = "";
+                }}
               />
-              <AlertDialogContent size="sm">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Очистить сохранение?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Это удалит сохранённый граф из браузера. Действие нельзя
-                    отменить.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Отмена</AlertDialogCancel>
-                  <AlertDialogCancel
-                    variant="destructive"
-                    onClick={onClearPersistedGraph}
-                  >
-                    Очистить
-                  </AlertDialogCancel>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            </div>
 
-            <input
-              ref={inputRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) onLoadJson(file);
-                e.currentTarget.value = "";
-              }}
-            />
+            <Separator orientation="vertical" className="mx-1 h-7" />
+
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant={bottomPanel === "adjacency" ? "default" : "outline"}
+                onClick={() => onTogglePanel("adjacency")}
+              >
+                <Table2Icon />
+                Adj
+              </Button>
+              <Button
+                size="sm"
+                variant={bottomPanel === "incidence" ? "default" : "outline"}
+                onClick={() => onTogglePanel("incidence")}
+              >
+                <Table2Icon />
+                Inc
+              </Button>
+            </div>
           </div>
+        </Card>
 
-          <Separator orientation="vertical" className="mx-1 h-7" />
-
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant={bottomPanel === "adjacency" ? "default" : "outline"}
-              onClick={() => onTogglePanel("adjacency")}
-            >
-              <Table2Icon />
-              Adj
-            </Button>
-            <Button
-              size="sm"
-              variant={bottomPanel === "incidence" ? "default" : "outline"}
-              onClick={() => onTogglePanel("incidence")}
-            >
-              <Table2Icon />
-              Inc
-            </Button>
-          </div>
-
-          <Separator orientation="vertical" className="mx-1 h-7" />
-
-          <div className="flex flex-1 flex-wrap items-center gap-2">
+        <Card size="sm" className="min-w-[320px] flex-1 gap-0 py-0">
+          <div className="flex flex-wrap items-center gap-2 p-2">
             <div className="flex min-w-[240px] items-center gap-2">
               <FileTextIcon className="size-4 text-foreground/70" />
               <Select
@@ -423,14 +424,8 @@ export function BottomToolbar({
               </div>
             )}
           </div>
-        </div>
-
-        {message && (
-          <div className="border-t px-3 py-2 text-xs text-foreground/70">
-            {message}
-          </div>
-        )}
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

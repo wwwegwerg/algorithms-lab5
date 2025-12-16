@@ -1,8 +1,10 @@
 import * as React from "react";
+import { AlertTriangleIcon, InfoIcon } from "lucide-react";
 import { BottomToolbar } from "@/components/editor/BottomToolbar";
 import { GraphCanvas } from "@/components/editor/GraphCanvas";
 import { MatrixPanel } from "@/components/editor/MatrixPanel";
 import { OverlayDock } from "@/components/editor/OverlayDock";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAlgorithm } from "@/core/algorithms/registry";
 import {
   buildAdjacencyMatrix,
@@ -30,6 +32,7 @@ export function GraphEditor() {
   const matrixUnweightedSymbol = useGraphStore((s) => s.matrixUnweightedSymbol);
 
   const lastGraphError = useGraphStore((s) => s.lastError);
+  const graphErrorNonce = useGraphStore((s) => s.errorNonce);
 
   const setMode = useGraphStore((s) => s.setMode);
   const clearSelection = useGraphStore((s) => s.clearSelection);
@@ -64,6 +67,7 @@ export function GraphEditor() {
   const isPlaying = useAlgorithmStore((s) => s.isPlaying);
   const playIntervalMs = useAlgorithmStore((s) => s.playIntervalMs);
   const lastAlgoError = useAlgorithmStore((s) => s.lastError);
+  const algoErrorNonce = useAlgorithmStore((s) => s.errorNonce);
 
   const setAlgorithmId = useAlgorithmStore((s) => s.setAlgorithmId);
   const setStartNodeId = useAlgorithmStore((s) => s.setStartNodeId);
@@ -131,6 +135,55 @@ export function GraphEditor() {
   ]);
 
   const message = lastGraphError ?? lastAlgoError ?? overlay?.message ?? null;
+  const messageKey = lastGraphError
+    ? `graph:${graphErrorNonce}`
+    : lastAlgoError
+      ? `algo:${algoErrorNonce}`
+      : overlay?.message
+        ? `overlay:${stepIndex}`
+        : null;
+
+  const isError = lastGraphError !== null || lastAlgoError !== null;
+  const messageTitle = lastGraphError
+    ? "Ошибка графа"
+    : lastAlgoError
+      ? "Ошибка алгоритма"
+      : "Сообщение";
+
+  const [toast, setToast] = React.useState<{
+    key: string;
+    title: string;
+    message: string;
+    isError: boolean;
+  } | null>(null);
+  const [isToastOpen, setIsToastOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const EXIT_MS = 200;
+
+    if (!message || !messageKey) {
+      setIsToastOpen(false);
+      const id = window.setTimeout(() => setToast(null), EXIT_MS);
+      return () => window.clearTimeout(id);
+    }
+
+    setToast({
+      key: messageKey,
+      title: messageTitle,
+      message,
+      isError,
+    });
+
+    setIsToastOpen(true);
+
+    const hideId = window.setTimeout(() => setIsToastOpen(false), 4000);
+    const unmountId = window.setTimeout(() => setToast(null), 4000 + EXIT_MS);
+
+    return () => {
+      window.clearTimeout(hideId);
+      window.clearTimeout(unmountId);
+    };
+  }, [isError, message, messageKey, messageTitle]);
 
   return (
     <div className="relative h-dvh w-dvw overflow-hidden">
@@ -195,6 +248,27 @@ export function GraphEditor() {
         onBoxSelect={applyBoxSelection}
         onCancelEdgeDraft={() => cancelEdgeDraft()}
       />
+
+      {toast && (
+        <div className="pointer-events-none fixed inset-y-0 left-3 z-50 flex items-center">
+          <div className="pointer-events-auto w-[360px] max-w-[calc(100vw-24px)]">
+            <div
+              key={toast.key}
+              data-state={isToastOpen ? "open" : "closed"}
+              className="duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-left-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-left-2 motion-reduce:animate-none"
+            >
+              <Alert
+                variant={toast.isError ? "destructive" : "default"}
+                className="shadow-lg ring-1 ring-foreground/10"
+              >
+                {toast.isError ? <AlertTriangleIcon /> : <InfoIcon />}
+                <AlertTitle>{toast.title}</AlertTitle>
+                <AlertDescription>{toast.message}</AlertDescription>
+              </Alert>
+            </div>
+          </div>
+        </div>
+      )}
 
       {bottomPanel !== "none" && (
         <div className="pointer-events-auto absolute inset-x-3 top-3 bottom-20">
@@ -316,7 +390,6 @@ export function GraphEditor() {
         onNext={nextStep}
         playIntervalMs={playIntervalMs}
         onChangePlayIntervalMs={setPlayIntervalMs}
-        message={message}
         selection={selection}
         selectedNode={selectedNode}
         selectedEdge={selectedEdge}
