@@ -184,10 +184,41 @@ export function GraphCanvas({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onCancelEdgeDraft]);
 
+  React.useEffect(() => {
+    if (mode === "add_edge" && addEdgeSourceId) return;
+    setCursorPoint(null);
+  }, [addEdgeSourceId, mode]);
+
   const visited = new Set(overlay?.visitedNodeIds ?? []);
   const frontier = new Set(overlay?.frontierNodeIds ?? []);
   const active = new Set(overlay?.activeNodeIds ?? []);
   const activeEdgeId = overlay?.activeEdgeId;
+
+  const draftSourceNode =
+    mode === "add_edge" && addEdgeSourceId
+      ? (nodesById.get(addEdgeSourceId) ?? null)
+      : null;
+
+  const draftPathD = React.useMemo(() => {
+    if (!draftSourceNode) return null;
+    if (!cursorPoint) return null;
+
+    const dx = cursorPoint.x - draftSourceNode.x;
+    const dy = cursorPoint.y - draftSourceNode.y;
+    const dist = vecLen(dx, dy);
+    if (dist < 0.001) return null;
+
+    const ux = dx / dist;
+    const uy = dy / dist;
+
+    const startX = draftSourceNode.x + ux * NODE_R;
+    const startY = draftSourceNode.y + uy * NODE_R;
+
+    const endX = cursorPoint.x;
+    const endY = cursorPoint.y;
+
+    return `M ${startX} ${startY} L ${endX} ${endY}`;
+  }, [cursorPoint, draftSourceNode]);
 
   return (
     <svg
@@ -195,7 +226,10 @@ export function GraphCanvas({
       className={cn("h-full w-full bg-muted/20 select-none", className)}
       onPointerMove={(e) => {
         const p = toSvgPoint(e.clientX, e.clientY);
-        setCursorPoint(p);
+
+        if (mode === "add_edge" && addEdgeSourceId) {
+          setCursorPoint(p);
+        }
 
         if (!dragging || mode !== "select") return;
         if (!p) return;
@@ -278,7 +312,7 @@ export function GraphCanvas({
                 onEdgeClick(e.id);
               }}
             />
-            {labelPoint && label.length > 0 ? (
+            {labelPoint && label.length > 0 && (
               <text
                 x={labelPoint.x}
                 y={labelPoint.y}
@@ -288,39 +322,20 @@ export function GraphCanvas({
               >
                 {label}
               </text>
-            ) : null}
+            )}
           </g>
         );
       })}
 
       {/* Draft edge */}
-      {mode === "add_edge" && addEdgeSourceId && cursorPoint
-        ? (() => {
-            const s = nodesById.get(addEdgeSourceId);
-            if (!s) return null;
-
-            const dx = cursorPoint.x - s.x;
-            const dy = cursorPoint.y - s.y;
-            const dist = vecLen(dx, dy);
-            const ux = dist > 0.001 ? dx / dist : 0;
-            const uy = dist > 0.001 ? dy / dist : 0;
-
-            const startX = s.x + ux * NODE_R;
-            const startY = s.y + uy * NODE_R;
-
-            const endX = cursorPoint.x;
-            const endY = cursorPoint.y;
-
-            return (
-              <path
-                d={`M ${startX} ${startY} L ${endX} ${endY}`}
-                className="fill-none stroke-primary/40"
-                strokeWidth={2}
-                strokeDasharray="6 4"
-              />
-            );
-          })()
-        : null}
+      {draftPathD && (
+        <path
+          d={draftPathD}
+          className="fill-none stroke-primary/40"
+          strokeWidth={2}
+          strokeDasharray="6 4"
+        />
+      )}
 
       {/* Nodes */}
       {nodes.map((n) => {
@@ -328,18 +343,6 @@ export function GraphCanvas({
         const isVisited = visited.has(n.id);
         const isFrontier = frontier.has(n.id);
         const isActive = active.has(n.id);
-
-        const fillClass = isActive
-          ? "fill-primary"
-          : isFrontier
-            ? "fill-secondary"
-            : isVisited
-              ? "fill-accent"
-              : "fill-background";
-
-        const strokeClass = selected
-          ? "stroke-primary"
-          : "stroke-muted-foreground";
 
         return (
           <g
@@ -361,10 +364,16 @@ export function GraphCanvas({
               cx={n.x}
               cy={n.y}
               r={NODE_R}
-              className={cn(fillClass, strokeClass)}
+              className={cn(
+                "fill-background",
+                isVisited && "fill-accent",
+                isFrontier && "fill-secondary",
+                isActive && "fill-primary",
+                selected ? "stroke-primary" : "stroke-muted-foreground",
+              )}
               strokeWidth={2}
             />
-            {selected ? (
+            {selected && (
               <circle
                 cx={n.x}
                 cy={n.y}
@@ -372,7 +381,7 @@ export function GraphCanvas({
                 className="fill-none stroke-primary/30"
                 strokeWidth={2}
               />
-            ) : null}
+            )}
             <text
               x={n.x}
               y={n.y}
@@ -390,33 +399,15 @@ export function GraphCanvas({
       })}
 
       {/* Helpers */}
-      {mode === "add_edge" && addEdgeSourceId
-        ? (() => {
-            const n = nodesById.get(addEdgeSourceId);
-            if (!n) return null;
-            return (
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r={NODE_R + 7}
-                className="fill-none stroke-primary/40"
-                strokeWidth={2}
-              />
-            );
-          })()
-        : null}
-
-      {/* Bounds hint */}
-      {nodes.length === 0 ? (
-        <text
-          x={24}
-          y={32}
-          className="fill-foreground/60 text-sm"
-          dominantBaseline="middle"
-        >
-          {"Клик по полотну — добавить вершину (режим Node)"}
-        </text>
-      ) : null}
+      {draftSourceNode && (
+        <circle
+          cx={draftSourceNode.x}
+          cy={draftSourceNode.y}
+          r={NODE_R + 7}
+          className="fill-none stroke-primary/40"
+          strokeWidth={2}
+        />
+      )}
     </svg>
   );
 }

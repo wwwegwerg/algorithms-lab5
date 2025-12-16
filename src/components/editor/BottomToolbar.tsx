@@ -320,7 +320,7 @@ export function BottomToolbar({
               />
             </div>
 
-            {selection?.kind === "node" && selectedNode ? (
+            {selection?.kind === "node" && selectedNode && (
               <div className="flex items-center gap-2">
                 <div className="text-xs text-foreground/60">label</div>
                 <Input
@@ -331,9 +331,9 @@ export function BottomToolbar({
                   }
                 />
               </div>
-            ) : null}
+            )}
 
-            {selection?.kind === "edge" && selectedEdge ? (
+            {selection?.kind === "edge" && selectedEdge && (
               <div className="flex items-center gap-2">
                 <div className="text-xs text-foreground/60">
                   {selectedEdge.id}
@@ -375,15 +375,15 @@ export function BottomToolbar({
                   }}
                 />
               </div>
-            ) : null}
+            )}
           </div>
         </div>
 
-        {message ? (
+        {message && (
           <div className="border-t px-3 py-2 text-xs text-foreground/70">
             {message}
           </div>
-        ) : null}
+        )}
       </Card>
     </div>
   );

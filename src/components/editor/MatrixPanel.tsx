@@ -27,7 +27,7 @@ export function MatrixPanel({
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle className="text-base">{title}</CardTitle>
         <div className="flex items-center gap-2">
-          {unweightedSymbol && onChangeUnweightedSymbol ? (
+          {unweightedSymbol && onChangeUnweightedSymbol && (
             <div className="flex items-center gap-2">
               <div className="text-xs text-foreground/70">Без веса:</div>
               <div className="flex items-center gap-1">
@@ -44,7 +44,7 @@ export function MatrixPanel({
                 ))}
               </div>
             </div>
-          ) : null}
+          )}
           <Button size="sm" variant="outline" onClick={onExportCsv}>
             Export CSV
           </Button>

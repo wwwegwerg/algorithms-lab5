@@ -21,6 +21,7 @@ type GraphState = {
   selection: Selection;
 
   infoOpen: boolean;
+  helpOpen: boolean;
 
   addEdgeSourceId: NodeId | null;
   newEdgeDirected: boolean;
@@ -42,6 +43,9 @@ type GraphActions = {
 
   setInfoOpen: (open: boolean) => void;
   toggleInfoOpen: () => void;
+
+  setHelpOpen: (open: boolean) => void;
+  toggleHelpOpen: () => void;
 
   setBottomPanel: (panel: BottomPanel) => void;
   setMatrixUnweightedSymbol: (symbol: MatrixUnweightedSymbol) => void;
@@ -78,6 +82,7 @@ const initialState: GraphState = {
   selection: null,
 
   infoOpen: false,
+  helpOpen: false,
 
   addEdgeSourceId: null,
   newEdgeDirected: false,
@@ -123,6 +128,9 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
 
   setInfoOpen: (open) => set({ infoOpen: open }),
   toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
+
+  setHelpOpen: (open) => set({ helpOpen: open }),
+  toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),
 
   setBottomPanel: (panel) => set({ bottomPanel: panel, lastError: null }),
 

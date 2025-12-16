@@ -1,10 +1,8 @@
 import * as React from "react";
-import { InfoIcon } from "lucide-react";
 import { BottomToolbar } from "@/components/editor/BottomToolbar";
 import { GraphCanvas } from "@/components/editor/GraphCanvas";
-import { InfoOverlay } from "@/components/editor/InfoOverlay";
 import { MatrixPanel } from "@/components/editor/MatrixPanel";
-import { Button } from "@/components/ui/button";
+import { OverlayDock } from "@/components/editor/OverlayDock";
 import { getAlgorithm } from "@/core/algorithms/registry";
 import {
   buildAdjacencyMatrix,
@@ -13,8 +11,8 @@ import {
 } from "@/core/graph/matrices";
 import { downloadTextFile, readTextFile } from "@/core/io/download";
 import { loadGraphSnapshot, makeGraphSnapshot } from "@/core/io/graphFile";
-import { selectOverlay, useAlgorithmStore } from "@/state/algorithmStore";
-import { useGraphStore } from "@/state/graphStore";
+import { selectOverlay, useAlgorithmStore } from "@/store/algorithmStore";
+import { useGraphStore } from "@/store/graphStore";
 
 export function GraphEditor() {
   const nodes = useGraphStore((s) => s.nodes);
@@ -33,9 +31,6 @@ export function GraphEditor() {
 
   const setMode = useGraphStore((s) => s.setMode);
   const setSelection = useGraphStore((s) => s.setSelection);
-
-  const infoOpen = useGraphStore((s) => s.infoOpen);
-  const toggleInfoOpen = useGraphStore((s) => s.toggleInfoOpen);
 
   const addNodeAt = useGraphStore((s) => s.addNodeAt);
   const updateNode = useGraphStore((s) => s.updateNode);
@@ -194,7 +189,7 @@ export function GraphEditor() {
         onCancelEdgeDraft={() => cancelEdgeDraft()}
       />
 
-      {bottomPanel !== "none" ? (
+      {bottomPanel !== "none" && (
         <div className="pointer-events-auto absolute inset-x-3 top-3 bottom-20">
           {bottomPanel === "adjacency" ? (
             <MatrixPanel
@@ -230,25 +225,13 @@ export function GraphEditor() {
             />
           )}
         </div>
-      ) : null}
+      )}
 
-      <div className="pointer-events-auto absolute top-3 right-3 z-40">
-        <Button
-          size="icon-sm"
-          variant={infoOpen ? "default" : "outline"}
-          onClick={toggleInfoOpen}
-          title="Info"
-        >
-          <InfoIcon />
-        </Button>
-      </div>
-
-      <InfoOverlay
-        isOpen={infoOpen}
-        selection={selection}
-        node={selectedNode}
-        edge={selectedEdge}
+      <OverlayDock
         mode={mode}
+        selection={selection}
+        selectedNode={selectedNode}
+        selectedEdge={selectedEdge}
         nodesCount={nodes.length}
         edgesCount={edges.length}
       />
