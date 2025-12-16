@@ -1,7 +1,7 @@
-import { ComponentExample } from "@/components/component-example";
+import { GraphEditor } from "@/components/editor/GraphEditor";
 
 export function App() {
-  return <ComponentExample />;
+  return <GraphEditor />;
 }
 
 export default App;
