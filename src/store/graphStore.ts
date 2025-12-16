@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   EdgeId,
   EditorMode,
@@ -11,6 +12,10 @@ import type {
 } from "@/core/graph/types";
 import { isLoop } from "@/core/graph/types";
 import { validateEdgeDraft } from "@/core/graph/validate";
+import { loadGraphSnapshot } from "@/core/io/graphFile";
+
+const PERSIST_KEY = "graph-editor:graph";
+const graphStorage = createJSONStorage(() => localStorage);
 
 export type BottomPanel = "none" | "adjacency" | "incidence";
 
@@ -87,6 +92,7 @@ type GraphActions = {
 
   setGraph: (nodes: GraphNode[], edges: GraphEdge[]) => void;
   resetGraph: () => void;
+  clearPersistedGraph: () => void;
 };
 
 const emptySelection: SelectionState = {
@@ -108,6 +114,25 @@ function computeNextIndex(prefix: string, ids: readonly string[]) {
     if (Number.isFinite(n)) max = Math.max(max, n);
   }
   return max + 1;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function tryLoadPersistedGraph(persisted: unknown) {
+  if (!isRecord(persisted)) return null;
+  const rawNodes = persisted.nodes;
+  const rawEdges = persisted.edges;
+  if (!Array.isArray(rawNodes) || !Array.isArray(rawEdges)) return null;
+
+  const loaded = loadGraphSnapshot({
+    version: 1,
+    nodes: rawNodes,
+    edges: rawEdges,
+  });
+  if (!loaded.ok) return null;
+  return loaded.graph;
 }
 
 function removeId<T extends string>(ids: readonly T[], id: T) {
@@ -166,373 +191,420 @@ const initialState: GraphState = {
   nextEdgeIndex: 1,
 };
 
-export const useGraphStore = create<GraphState & GraphActions>((set) => ({
-  ...initialState,
+export const useGraphStore = create<GraphState & GraphActions>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  clearError: () => set({ lastError: null }),
+      clearError: () => set({ lastError: null }),
 
-  setMode: (mode) =>
-    set((s) => {
-      const interaction: InteractionState = { ...s.interaction, mode };
+      setMode: (mode) =>
+        set((s) => {
+          const interaction: InteractionState = { ...s.interaction, mode };
 
-      if (mode === "add_edge") {
-        interaction.selection = emptySelection;
-        interaction.edgeDraft = null;
-      } else {
-        interaction.edgeDraft = null;
-      }
-
-      return { interaction, lastError: null };
-    }),
-
-  clearSelection: () =>
-    set((s) => ({
-      interaction: {
-        ...s.interaction,
-        selection: emptySelection,
-        edgeDraft: null,
-      },
-      lastError: null,
-    })),
-
-  selectNode: (id, additive) =>
-    set((s) => {
-      if (!additive) {
-        return {
-          interaction: {
-            ...s.interaction,
-            selection: {
-              nodeIds: [id],
-              edgeIds: [],
-              focus: { kind: "node", id },
-            },
-            edgeDraft: null,
-          },
-          lastError: null,
-        };
-      }
-
-      const toggled = toggleId(s.interaction.selection.nodeIds, id);
-      const focus: SelectionItem | null = toggled.included
-        ? { kind: "node", id }
-        : s.interaction.selection.focus?.kind === "node" &&
-            s.interaction.selection.focus.id === id
-          ? null
-          : s.interaction.selection.focus;
-
-      return {
-        interaction: {
-          ...s.interaction,
-          selection: normalizeSelection({
-            nodeIds: toggled.next,
-            edgeIds: s.interaction.selection.edgeIds,
-            focus,
-          }),
-          edgeDraft: null,
-        },
-        lastError: null,
-      };
-    }),
-
-  selectEdge: (id, additive) =>
-    set((s) => {
-      if (!additive) {
-        return {
-          interaction: {
-            ...s.interaction,
-            selection: {
-              nodeIds: [],
-              edgeIds: [id],
-              focus: { kind: "edge", id },
-            },
-            edgeDraft: null,
-          },
-          lastError: null,
-        };
-      }
-
-      const toggled = toggleId(s.interaction.selection.edgeIds, id);
-      const focus: SelectionItem | null = toggled.included
-        ? { kind: "edge", id }
-        : s.interaction.selection.focus?.kind === "edge" &&
-            s.interaction.selection.focus.id === id
-          ? null
-          : s.interaction.selection.focus;
-
-      return {
-        interaction: {
-          ...s.interaction,
-          selection: normalizeSelection({
-            nodeIds: s.interaction.selection.nodeIds,
-            edgeIds: toggled.next,
-            focus,
-          }),
-          edgeDraft: null,
-        },
-        lastError: null,
-      };
-    }),
-
-  applyBoxSelection: (nodeIds, edgeIds, additive) =>
-    set((s) => {
-      const focus: SelectionItem | null =
-        nodeIds.length > 0
-          ? { kind: "node", id: nodeIds[nodeIds.length - 1]! }
-          : edgeIds.length > 0
-            ? { kind: "edge", id: edgeIds[edgeIds.length - 1]! }
-            : additive
-              ? s.interaction.selection.focus
-              : null;
-
-      const selection: SelectionState = additive
-        ? {
-            nodeIds: nodeIds.reduce(
-              (acc, id) => uniqueAppend(acc, id),
-              s.interaction.selection.nodeIds,
-            ),
-            edgeIds: edgeIds.reduce(
-              (acc, id) => uniqueAppend(acc, id),
-              s.interaction.selection.edgeIds,
-            ),
-            focus,
+          if (mode === "add_edge") {
+            interaction.selection = emptySelection;
+            interaction.edgeDraft = null;
+          } else {
+            interaction.edgeDraft = null;
           }
-        : { nodeIds, edgeIds, focus };
 
-      return {
-        interaction: {
-          ...s.interaction,
-          selection: normalizeSelection(selection),
-          edgeDraft: null,
-        },
-        lastError: null,
-      };
-    }),
+          return { interaction, lastError: null };
+        }),
 
-  setInfoOpen: (open) => set({ infoOpen: open }),
-  toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
-
-  setHelpOpen: (open) => set({ helpOpen: open }),
-  toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),
-
-  setBottomPanel: (panel) => set({ bottomPanel: panel, lastError: null }),
-
-  setMatrixUnweightedSymbol: (symbol) =>
-    set({ matrixUnweightedSymbol: symbol }),
-
-  addNodeAt: (x, y) =>
-    set((s) => {
-      const id = nextId("n", s.nextNodeIndex);
-      const node: GraphNode = { id, label: id, x, y };
-
-      return {
-        nodes: [...s.nodes, node],
-        nextNodeIndex: s.nextNodeIndex + 1,
-        interaction: {
-          ...s.interaction,
-          selection: {
-            nodeIds: [id],
-            edgeIds: [],
-            focus: { kind: "node", id },
+      clearSelection: () =>
+        set((s) => ({
+          interaction: {
+            ...s.interaction,
+            selection: emptySelection,
+            edgeDraft: null,
           },
-          edgeDraft: null,
-        },
-        lastError: null,
-      };
-    }),
+          lastError: null,
+        })),
 
-  updateNode: (id, patch) =>
-    set((s) => ({
-      nodes: s.nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
-    })),
+      selectNode: (id, additive) =>
+        set((s) => {
+          if (!additive) {
+            return {
+              interaction: {
+                ...s.interaction,
+                selection: {
+                  nodeIds: [id],
+                  edgeIds: [],
+                  focus: { kind: "node", id },
+                },
+                edgeDraft: null,
+              },
+              lastError: null,
+            };
+          }
 
-  deleteNode: (id) =>
-    set((s) => {
-      const nodes = s.nodes.filter((n) => n.id !== id);
-      const edges = s.edges.filter((e) => e.source !== id && e.target !== id);
+          const toggled = toggleId(s.interaction.selection.nodeIds, id);
+          const focus: SelectionItem | null = toggled.included
+            ? { kind: "node", id }
+            : s.interaction.selection.focus?.kind === "node" &&
+                s.interaction.selection.focus.id === id
+              ? null
+              : s.interaction.selection.focus;
 
-      const remainingNodeIds = new Set(nodes.map((n) => n.id));
-      const remainingEdgeIds = new Set(edges.map((e) => e.id));
+          return {
+            interaction: {
+              ...s.interaction,
+              selection: normalizeSelection({
+                nodeIds: toggled.next,
+                edgeIds: s.interaction.selection.edgeIds,
+                focus,
+              }),
+              edgeDraft: null,
+            },
+            lastError: null,
+          };
+        }),
 
-      const selection: SelectionState = normalizeSelection({
-        nodeIds: s.interaction.selection.nodeIds.filter((nid) =>
-          remainingNodeIds.has(nid),
-        ),
-        edgeIds: s.interaction.selection.edgeIds.filter((eid) =>
-          remainingEdgeIds.has(eid),
-        ),
-        focus: s.interaction.selection.focus,
-      });
+      selectEdge: (id, additive) =>
+        set((s) => {
+          if (!additive) {
+            return {
+              interaction: {
+                ...s.interaction,
+                selection: {
+                  nodeIds: [],
+                  edgeIds: [id],
+                  focus: { kind: "edge", id },
+                },
+                edgeDraft: null,
+              },
+              lastError: null,
+            };
+          }
 
-      const edgeDraft =
-        s.interaction.edgeDraft?.sourceId === id
-          ? null
-          : s.interaction.edgeDraft;
+          const toggled = toggleId(s.interaction.selection.edgeIds, id);
+          const focus: SelectionItem | null = toggled.included
+            ? { kind: "edge", id }
+            : s.interaction.selection.focus?.kind === "edge" &&
+                s.interaction.selection.focus.id === id
+              ? null
+              : s.interaction.selection.focus;
 
-      return {
-        nodes,
-        edges,
-        interaction: { ...s.interaction, selection, edgeDraft },
-        lastError: null,
-      };
-    }),
+          return {
+            interaction: {
+              ...s.interaction,
+              selection: normalizeSelection({
+                nodeIds: s.interaction.selection.nodeIds,
+                edgeIds: toggled.next,
+                focus,
+              }),
+              edgeDraft: null,
+            },
+            lastError: null,
+          };
+        }),
 
-  startEdgeFrom: (id) =>
-    set((s) => ({
-      interaction: {
-        ...s.interaction,
-        selection: emptySelection,
-        edgeDraft: { sourceId: id },
-      },
-      lastError: null,
-    })),
+      applyBoxSelection: (nodeIds, edgeIds, additive) =>
+        set((s) => {
+          const focus: SelectionItem | null =
+            nodeIds.length > 0
+              ? { kind: "node", id: nodeIds[nodeIds.length - 1]! }
+              : edgeIds.length > 0
+                ? { kind: "edge", id: edgeIds[edgeIds.length - 1]! }
+                : additive
+                  ? s.interaction.selection.focus
+                  : null;
 
-  cancelEdgeDraft: () =>
-    set((s) => ({
-      interaction: { ...s.interaction, edgeDraft: null },
-      lastError: null,
-    })),
+          const selection: SelectionState = additive
+            ? {
+                nodeIds: nodeIds.reduce(
+                  (acc, id) => uniqueAppend(acc, id),
+                  s.interaction.selection.nodeIds,
+                ),
+                edgeIds: edgeIds.reduce(
+                  (acc, id) => uniqueAppend(acc, id),
+                  s.interaction.selection.edgeIds,
+                ),
+                focus,
+              }
+            : { nodeIds, edgeIds, focus };
 
-  setNewEdgeDirected: (directed) => set({ newEdgeDirected: directed }),
+          return {
+            interaction: {
+              ...s.interaction,
+              selection: normalizeSelection(selection),
+              edgeDraft: null,
+            },
+            lastError: null,
+          };
+        }),
 
-  addEdgeTo: (targetId) =>
-    set((s) => {
-      const sourceId = s.interaction.edgeDraft?.sourceId;
-      if (!sourceId) return s;
+      setInfoOpen: (open) => set({ infoOpen: open }),
+      toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
 
-      const draft = {
-        source: sourceId,
-        target: targetId,
-        directed: s.newEdgeDirected,
-      };
+      setHelpOpen: (open) => set({ helpOpen: open }),
+      toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),
 
-      const validation = validateEdgeDraft(s.nodes, s.edges, draft);
-      if (!validation.ok) {
-        return { ...s, lastError: validation.message };
-      }
+      setBottomPanel: (panel) => set({ bottomPanel: panel, lastError: null }),
 
-      const id = nextId("e", s.nextEdgeIndex);
-      const edge: GraphEdge = { id, ...draft };
+      setMatrixUnweightedSymbol: (symbol) =>
+        set({ matrixUnweightedSymbol: symbol }),
 
-      return {
-        ...s,
-        edges: [...s.edges, edge],
-        nextEdgeIndex: s.nextEdgeIndex + 1,
-        interaction: {
-          ...s.interaction,
-          selection: {
-            nodeIds: [],
-            edgeIds: [id],
-            focus: { kind: "edge", id },
+      addNodeAt: (x, y) =>
+        set((s) => {
+          const id = nextId("n", s.nextNodeIndex);
+          const node: GraphNode = { id, label: id, x, y };
+
+          return {
+            nodes: [...s.nodes, node],
+            nextNodeIndex: s.nextNodeIndex + 1,
+            interaction: {
+              ...s.interaction,
+              selection: {
+                nodeIds: [id],
+                edgeIds: [],
+                focus: { kind: "node", id },
+              },
+              edgeDraft: null,
+            },
+            lastError: null,
+          };
+        }),
+
+      updateNode: (id, patch) =>
+        set((s) => ({
+          nodes: s.nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
+        })),
+
+      deleteNode: (id) =>
+        set((s) => {
+          const nodes = s.nodes.filter((n) => n.id !== id);
+          const edges = s.edges.filter(
+            (e) => e.source !== id && e.target !== id,
+          );
+
+          const remainingNodeIds = new Set(nodes.map((n) => n.id));
+          const remainingEdgeIds = new Set(edges.map((e) => e.id));
+
+          const selection: SelectionState = normalizeSelection({
+            nodeIds: s.interaction.selection.nodeIds.filter((nid) =>
+              remainingNodeIds.has(nid),
+            ),
+            edgeIds: s.interaction.selection.edgeIds.filter((eid) =>
+              remainingEdgeIds.has(eid),
+            ),
+            focus: s.interaction.selection.focus,
+          });
+
+          const edgeDraft =
+            s.interaction.edgeDraft?.sourceId === id
+              ? null
+              : s.interaction.edgeDraft;
+
+          return {
+            nodes,
+            edges,
+            interaction: { ...s.interaction, selection, edgeDraft },
+            lastError: null,
+          };
+        }),
+
+      startEdgeFrom: (id) =>
+        set((s) => ({
+          interaction: {
+            ...s.interaction,
+            selection: emptySelection,
+            edgeDraft: { sourceId: id },
           },
-          edgeDraft: null,
-        },
-        lastError: null,
-      };
-    }),
+          lastError: null,
+        })),
 
-  updateEdge: (id, patch) =>
-    set((s) => {
-      const edge = s.edges.find((e) => e.id === id);
-      if (!edge) return s;
+      cancelEdgeDraft: () =>
+        set((s) => ({
+          interaction: { ...s.interaction, edgeDraft: null },
+          lastError: null,
+        })),
 
-      const next: GraphEdge = { ...edge, ...patch };
+      setNewEdgeDirected: (directed) => set({ newEdgeDirected: directed }),
 
-      if (isLoop(next)) {
-        next.directed = false;
-      }
+      addEdgeTo: (targetId) =>
+        set((s) => {
+          const sourceId = s.interaction.edgeDraft?.sourceId;
+          if (!sourceId) return s;
 
-      const validation = validateEdgeDraft(
-        s.nodes,
-        s.edges,
-        {
-          source: next.source,
-          target: next.target,
-          directed: next.directed,
-          weight: next.weight,
-        },
-        id,
-      );
+          const draft = {
+            source: sourceId,
+            target: targetId,
+            directed: s.newEdgeDirected,
+          };
 
-      if (!validation.ok) {
-        return { ...s, lastError: validation.message };
-      }
+          const validation = validateEdgeDraft(s.nodes, s.edges, draft);
+          if (!validation.ok) {
+            return { ...s, lastError: validation.message };
+          }
 
-      return {
-        ...s,
-        edges: s.edges.map((e) => (e.id === id ? next : e)),
-        lastError: null,
-      };
-    }),
+          const id = nextId("e", s.nextEdgeIndex);
+          const edge: GraphEdge = { id, ...draft };
 
-  deleteEdge: (id) =>
-    set((s) => {
-      const edges = s.edges.filter((e) => e.id !== id);
-      const remainingEdgeIds = new Set(edges.map((e) => e.id));
+          return {
+            ...s,
+            edges: [...s.edges, edge],
+            nextEdgeIndex: s.nextEdgeIndex + 1,
+            interaction: {
+              ...s.interaction,
+              selection: {
+                nodeIds: [],
+                edgeIds: [id],
+                focus: { kind: "edge", id },
+              },
+              edgeDraft: null,
+            },
+            lastError: null,
+          };
+        }),
 
-      const selection: SelectionState = normalizeSelection({
-        nodeIds: s.interaction.selection.nodeIds,
-        edgeIds: s.interaction.selection.edgeIds.filter((eid) =>
-          remainingEdgeIds.has(eid),
-        ),
-        focus: s.interaction.selection.focus,
-      });
+      updateEdge: (id, patch) =>
+        set((s) => {
+          const edge = s.edges.find((e) => e.id === id);
+          if (!edge) return s;
 
-      return {
-        edges,
-        interaction: { ...s.interaction, selection },
-        lastError: null,
-      };
-    }),
+          const next: GraphEdge = { ...edge, ...patch };
 
-  deleteSelection: () =>
-    set((s) => {
-      const selectedNodeIds = new Set(s.interaction.selection.nodeIds);
-      const selectedEdgeIds = new Set(s.interaction.selection.edgeIds);
+          if (isLoop(next)) {
+            next.directed = false;
+          }
 
-      if (selectedNodeIds.size === 0 && selectedEdgeIds.size === 0) return s;
+          const validation = validateEdgeDraft(
+            s.nodes,
+            s.edges,
+            {
+              source: next.source,
+              target: next.target,
+              directed: next.directed,
+              weight: next.weight,
+            },
+            id,
+          );
 
-      const nodes = s.nodes.filter((n) => !selectedNodeIds.has(n.id));
-      const edges = s.edges.filter(
-        (e) =>
-          !selectedEdgeIds.has(e.id) &&
-          !selectedNodeIds.has(e.source) &&
-          !selectedNodeIds.has(e.target),
-      );
+          if (!validation.ok) {
+            return { ...s, lastError: validation.message };
+          }
 
-      const edgeDraft =
-        s.interaction.edgeDraft &&
-        selectedNodeIds.has(s.interaction.edgeDraft.sourceId)
-          ? null
-          : s.interaction.edgeDraft;
+          return {
+            ...s,
+            edges: s.edges.map((e) => (e.id === id ? next : e)),
+            lastError: null,
+          };
+        }),
 
-      return {
-        nodes,
-        edges,
-        interaction: { ...s.interaction, selection: emptySelection, edgeDraft },
-        lastError: null,
-      };
-    }),
+      deleteEdge: (id) =>
+        set((s) => {
+          const edges = s.edges.filter((e) => e.id !== id);
+          const remainingEdgeIds = new Set(edges.map((e) => e.id));
 
-  setGraph: (nodes, edges) =>
-    set((s) => ({
-      nodes,
-      edges,
-      interaction: {
-        ...s.interaction,
-        mode: "select",
-        selection: emptySelection,
-        edgeDraft: null,
+          const selection: SelectionState = normalizeSelection({
+            nodeIds: s.interaction.selection.nodeIds,
+            edgeIds: s.interaction.selection.edgeIds.filter((eid) =>
+              remainingEdgeIds.has(eid),
+            ),
+            focus: s.interaction.selection.focus,
+          });
+
+          return {
+            edges,
+            interaction: { ...s.interaction, selection },
+            lastError: null,
+          };
+        }),
+
+      deleteSelection: () =>
+        set((s) => {
+          const selectedNodeIds = new Set(s.interaction.selection.nodeIds);
+          const selectedEdgeIds = new Set(s.interaction.selection.edgeIds);
+
+          if (selectedNodeIds.size === 0 && selectedEdgeIds.size === 0)
+            return s;
+
+          const nodes = s.nodes.filter((n) => !selectedNodeIds.has(n.id));
+          const edges = s.edges.filter(
+            (e) =>
+              !selectedEdgeIds.has(e.id) &&
+              !selectedNodeIds.has(e.source) &&
+              !selectedNodeIds.has(e.target),
+          );
+
+          const edgeDraft =
+            s.interaction.edgeDraft &&
+            selectedNodeIds.has(s.interaction.edgeDraft.sourceId)
+              ? null
+              : s.interaction.edgeDraft;
+
+          return {
+            nodes,
+            edges,
+            interaction: {
+              ...s.interaction,
+              selection: emptySelection,
+              edgeDraft,
+            },
+            lastError: null,
+          };
+        }),
+
+      setGraph: (nodes, edges) =>
+        set((s) => ({
+          nodes,
+          edges,
+          interaction: {
+            ...s.interaction,
+            mode: "select",
+            selection: emptySelection,
+            edgeDraft: null,
+          },
+          lastError: null,
+          nextNodeIndex: computeNextIndex(
+            "n",
+            nodes.map((n) => n.id),
+          ),
+          nextEdgeIndex: computeNextIndex(
+            "e",
+            edges.map((e) => e.id),
+          ),
+        })),
+
+      resetGraph: () => set({ ...initialState }),
+
+      clearPersistedGraph: () => {
+        set({ ...initialState });
+        graphStorage?.removeItem(PERSIST_KEY);
       },
-      lastError: null,
-      nextNodeIndex: computeNextIndex(
-        "n",
-        nodes.map((n) => n.id),
-      ),
-      nextEdgeIndex: computeNextIndex(
-        "e",
-        edges.map((e) => e.id),
-      ),
-    })),
+    }),
+    {
+      name: PERSIST_KEY,
+      version: 1,
+      storage: graphStorage,
+      partialize: (s) => ({ nodes: s.nodes, edges: s.edges }),
+      merge: (persisted, current) => {
+        const next = tryLoadPersistedGraph(persisted);
+        if (!next) return current;
 
-  resetGraph: () => set({ ...initialState }),
-}));
+        return {
+          ...current,
+          nodes: next.nodes,
+          edges: next.edges,
+          interaction: {
+            ...current.interaction,
+            mode: "select",
+            selection: emptySelection,
+            edgeDraft: null,
+          },
+          lastError: null,
+          nextNodeIndex: computeNextIndex(
+            "n",
+            next.nodes.map((n) => n.id),
+          ),
+          nextEdgeIndex: computeNextIndex(
+            "e",
+            next.edges.map((e) => e.id),
+          ),
+        };
+      },
+    },
+  ),
+);

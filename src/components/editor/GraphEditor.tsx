@@ -55,6 +55,7 @@ export function GraphEditor() {
     (s) => s.setMatrixUnweightedSymbol,
   );
   const setGraph = useGraphStore((s) => s.setGraph);
+  const clearPersistedGraph = useGraphStore((s) => s.clearPersistedGraph);
 
   const algorithmId = useAlgorithmStore((s) => s.algorithmId);
   const startNodeId = useAlgorithmStore((s) => s.startNodeId);
@@ -270,6 +271,12 @@ export function GraphEditor() {
             return;
           }
           setGraph(loaded.graph.nodes, loaded.graph.edges);
+          setSteps([]);
+          setPlaying(false);
+          setAlgoError(null);
+        }}
+        onClearPersistedGraph={() => {
+          clearPersistedGraph();
           setSteps([]);
           setPlaying(false);
           setAlgoError(null);

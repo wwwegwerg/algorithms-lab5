@@ -13,6 +13,16 @@ import {
   Trash2Icon,
   UploadIcon,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -49,6 +59,7 @@ export type BottomToolbarProps = {
 
   onSaveJson: () => void;
   onLoadJson: (file: File) => void;
+  onClearPersistedGraph: () => void;
 
   nodes: { id: string }[];
 
@@ -91,6 +102,7 @@ export function BottomToolbar({
   onTogglePanel,
   onSaveJson,
   onLoadJson,
+  onClearPersistedGraph,
   nodes,
   algorithmId,
   onChangeAlgorithmId,
@@ -198,6 +210,40 @@ export function BottomToolbar({
               <UploadIcon />
               Load
             </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    title="Очистить сохранение"
+                  >
+                    <Trash2Icon />
+                    Clear
+                  </Button>
+                }
+              />
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Очистить сохранение?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Это удалит сохранённый граф из браузера. Действие нельзя
+                    отменить.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Отмена</AlertDialogCancel>
+                  <AlertDialogCancel
+                    variant="destructive"
+                    onClick={onClearPersistedGraph}
+                  >
+                    Очистить
+                  </AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <input
               ref={inputRef}
               type="file"
