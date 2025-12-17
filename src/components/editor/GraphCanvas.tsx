@@ -70,27 +70,18 @@ export function GraphCanvas({
   } | null>(null);
   const [boxSelect, setBoxSelect] = React.useState<BoxSelect | null>(null);
 
-  const nodesById = React.useMemo(
-    () => new Map(nodes.map((n) => [n.id, n])),
-    [nodes],
-  );
+  const nodesById = new Map(nodes.map((n) => [n.id, n]));
 
-  const reverseDirected = React.useMemo(() => {
-    const set = new Set<string>();
-    for (const e of edges) {
-      if (!e.directed) continue;
-      set.add(`${e.source}->${e.target}`);
-    }
-    return set;
-  }, [edges]);
+  const reverseDirected = new Set<string>();
+  for (const e of edges) {
+    if (!e.directed) continue;
+    reverseDirected.add(`${e.source}->${e.target}`);
+  }
 
-  const hasOpposite = React.useCallback(
-    (edge: GraphEdge) =>
-      edge.directed && reverseDirected.has(`${edge.target}->${edge.source}`),
-    [reverseDirected],
-  );
+  const hasOpposite = (edge: GraphEdge) =>
+    edge.directed && reverseDirected.has(`${edge.target}->${edge.source}`);
 
-  const toSvgPoint = React.useCallback((clientX: number, clientY: number) => {
+  const toSvgPoint = (clientX: number, clientY: number) => {
     const el = ref.current;
     if (!el) return null;
 
@@ -98,7 +89,7 @@ export function GraphCanvas({
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     return { x, y };
-  }, []);
+  };
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -120,11 +111,7 @@ export function GraphCanvas({
       : null;
 
   const boxRect = boxSelect ? normalizeBox(boxSelect) : null;
-
-  const draftPathD = React.useMemo(
-    () => draftEdgePath(draftSourceNode, cursorPoint),
-    [cursorPoint, draftSourceNode],
-  );
+  const draftPathD = draftEdgePath(draftSourceNode, cursorPoint);
 
   return (
     <svg

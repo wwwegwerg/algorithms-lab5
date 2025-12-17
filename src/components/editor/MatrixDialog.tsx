@@ -1,10 +1,8 @@
-import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -20,6 +18,7 @@ import {
   buildAdjacencyMatrix,
   buildIncidenceMatrix,
   matrixToCsv,
+  type MatrixTable,
 } from "@/core/graph/matrices";
 import type {
   GraphEdge,
@@ -27,13 +26,11 @@ import type {
   MatrixUnweightedSymbol,
 } from "@/core/graph/types";
 import { downloadTextFile } from "@/core/io/download";
-import { cn } from "@/lib/utils";
-
-export type MatrixDialogKind = "none" | "adjacency" | "incidence";
 
 export type MatrixDialogProps = {
   open: boolean;
-  kind: MatrixDialogKind;
+  kind: "none" | "adjacency" | "incidence";
+
   nodes: readonly GraphNode[];
   edges: readonly GraphEdge[];
 
@@ -52,17 +49,12 @@ export function MatrixDialog({
   onChangeUnweightedSymbol,
   onClose,
 }: MatrixDialogProps) {
-  const matrixTable = React.useMemo(() => {
-    if (kind === "adjacency") {
-      return buildAdjacencyMatrix(nodes, edges, unweightedSymbol);
-    }
-
-    if (kind === "incidence") {
-      return buildIncidenceMatrix(nodes, edges);
-    }
-
-    return null;
-  }, [edges, kind, nodes, unweightedSymbol]);
+  const matrixTable: MatrixTable | null =
+    kind === "adjacency"
+      ? buildAdjacencyMatrix(nodes, edges, unweightedSymbol)
+      : kind === "incidence"
+        ? buildIncidenceMatrix(nodes, edges)
+        : null;
 
   return (
     <Dialog
@@ -122,8 +114,6 @@ export function MatrixDialog({
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    if (!matrixTable) return;
-
                     if (kind === "adjacency") {
                       downloadTextFile(
                         "adjacency.csv",
@@ -164,26 +154,18 @@ export function MatrixDialog({
                   ))}
                 </TableRow>
               </TableHeader>
-
               <TableBody>
-                {matrixTable.values.map((row, rowIndex) => (
+                {matrixTable.rowLabels.map((label, rowIndex) => (
                   <TableRow
-                    className="odd:bg-muted hover:bg-transparent odd:hover:bg-muted [&>:not(:last-child)]:border-r"
-                    key={matrixTable.rowLabels[rowIndex] ?? rowIndex}
+                    key={label}
+                    className="[&>:not(:last-child)]:border-r"
                   >
-                    <TableHead
-                      scope="row"
-                      className={cn(
-                        "sticky left-0 z-20 text-center",
-                        "bg-background",
-                        rowIndex % 2 === 0 && "bg-muted",
-                      )}
-                    >
-                      {matrixTable.rowLabels[rowIndex]}
-                    </TableHead>
-                    {row.map((v, colIndex) => (
-                      <TableCell key={colIndex} className="text-center">
-                        {v}
+                    <TableCell className="sticky left-0 z-10 bg-background text-center font-medium">
+                      {label}
+                    </TableCell>
+                    {(matrixTable.values[rowIndex] ?? []).map((value, idx) => (
+                      <TableCell key={idx} className="text-center">
+                        {value}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -191,8 +173,6 @@ export function MatrixDialog({
               </TableBody>
             </Table>
           </div>
-
-          <DialogFooter showCloseButton />
         </DialogContent>
       )}
     </Dialog>
