@@ -111,8 +111,12 @@ function computeNextIndex(prefix: string, ids: readonly string[]) {
   const re = new RegExp(`^${prefix}(\\d+)$`);
   for (const id of ids) {
     const match = re.exec(id);
-    const n = match ? Number(match[1]) : 0;
-    if (Number.isFinite(n)) max = Math.max(max, n);
+    if (!match) continue;
+
+    const n = Number(match[1]);
+    if (!Number.isFinite(n)) continue;
+
+    max = Math.max(max, n);
   }
   return max + 1;
 }

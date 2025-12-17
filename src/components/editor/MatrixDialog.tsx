@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,12 +52,17 @@ export function MatrixDialog({
   onChangeUnweightedSymbol,
   onClose,
 }: MatrixDialogProps) {
-  const matrixTable =
-    kind === "adjacency"
-      ? buildAdjacencyMatrix(nodes, edges, unweightedSymbol)
-      : kind === "incidence"
-        ? buildIncidenceMatrix(nodes, edges)
-        : null;
+  const matrixTable = React.useMemo(() => {
+    if (kind === "adjacency") {
+      return buildAdjacencyMatrix(nodes, edges, unweightedSymbol);
+    }
+
+    if (kind === "incidence") {
+      return buildIncidenceMatrix(nodes, edges);
+    }
+
+    return null;
+  }, [edges, kind, nodes, unweightedSymbol]);
 
   return (
     <Dialog
@@ -116,24 +122,20 @@ export function MatrixDialog({
                   size="sm"
                   variant="outline"
                   onClick={() => {
+                    if (!matrixTable) return;
+
                     if (kind === "adjacency") {
-                      const table = buildAdjacencyMatrix(
-                        nodes,
-                        edges,
-                        unweightedSymbol,
-                      );
                       downloadTextFile(
                         "adjacency.csv",
-                        matrixToCsv(table),
+                        matrixToCsv(matrixTable),
                         "text/csv",
                       );
                     }
 
                     if (kind === "incidence") {
-                      const table = buildIncidenceMatrix(nodes, edges);
                       downloadTextFile(
                         "incidence.csv",
-                        matrixToCsv(table),
+                        matrixToCsv(matrixTable),
                         "text/csv",
                       );
                     }

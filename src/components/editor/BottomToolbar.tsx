@@ -138,7 +138,7 @@ export function BottomToolbar({
         className,
       )}
     >
-      <div className="pointer-events-auto mx-auto flex max-w-[1200px] flex-wrap items-end justify-center gap-2">
+      <div className="pointer-events-auto mx-auto flex max-w-300 flex-wrap items-end justify-center gap-2">
         <Card size="sm" className="gap-0 py-0">
           <div className="flex items-center gap-2 p-2">
             <div className="flex items-center gap-1">
@@ -287,7 +287,7 @@ export function BottomToolbar({
 
         <Card size="sm" className="min-w-[320px] flex-1 gap-0 py-0">
           <div className="flex flex-wrap items-center gap-2 p-2">
-            <div className="flex min-w-[240px] items-center gap-2">
+            <div className="flex min-w-60 items-center gap-2">
               <FileTextIcon className="size-4 text-foreground/70" />
               <Select
                 items={algorithms.map((a) => ({ label: a.label, value: a.id }))}
@@ -297,7 +297,7 @@ export function BottomToolbar({
                   onChangeAlgorithmId(value);
                 }}
               >
-                <SelectTrigger className="h-8 w-[220px]">
+                <SelectTrigger className="h-8 w-55">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,7 +321,7 @@ export function BottomToolbar({
                 value={startNodeId}
                 onValueChange={(value) => onChangeStartNodeId(value)}
               >
-                <SelectTrigger className="h-8 w-[170px]">
+                <SelectTrigger className="h-8 w-42.5">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -361,7 +361,7 @@ export function BottomToolbar({
             <div className="flex items-center gap-2">
               <div className="text-xs text-foreground/60">ms</div>
               <Input
-                className="h-8 w-[92px]"
+                className="h-8 w-23"
                 type="number"
                 value={String(playIntervalMs)}
                 onChange={(e) => {
@@ -376,7 +376,7 @@ export function BottomToolbar({
               <div className="flex items-center gap-2">
                 <div className="text-xs text-foreground/60">label</div>
                 <Input
-                  className="h-8 w-[180px]"
+                  className="h-8 w-45"
                   value={selectedNode.label}
                   onChange={(e) =>
                     onUpdateNode(selectedNode.id, { label: e.target.value })
@@ -412,7 +412,7 @@ export function BottomToolbar({
                   </Button>
                 </div>
                 <Input
-                  className="h-8 w-[120px]"
+                  className="h-8 w-30"
                   inputMode="decimal"
                   placeholder="weight"
                   value={

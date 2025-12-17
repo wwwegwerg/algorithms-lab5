@@ -1,3 +1,4 @@
+import type * as React from "react";
 import type { EditorMode } from "@/core/graph/types";
 
 export type HelpOverlayProps = {
@@ -53,7 +54,7 @@ export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="pointer-events-auto w-[360px] rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
+    <div className="pointer-events-auto w-90 rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
       <div className="space-y-3">
         <Section title="Modes">
           <Row left={<Kbd>select</Kbd>} right="выделение/перетаскивание" />

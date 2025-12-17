@@ -16,12 +16,6 @@ function connectsPair(edge: GraphEdge, a: NodeId, b: NodeId) {
 }
 
 function touchesPairUndirected(edge: GraphEdge, a: NodeId, b: NodeId) {
-  if (edge.directed) {
-    return (
-      (edge.source === a && edge.target === b) ||
-      (edge.source === b && edge.target === a)
-    );
-  }
   return (
     (edge.source === a && edge.target === b) ||
     (edge.source === b && edge.target === a)

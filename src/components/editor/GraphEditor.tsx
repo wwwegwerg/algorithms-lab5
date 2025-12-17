@@ -246,7 +246,7 @@ export function GraphEditor() {
 
       {toast && (
         <div className="pointer-events-none fixed inset-y-0 left-3 z-50 flex items-center">
-          <div className="pointer-events-auto w-[360px] max-w-[calc(100vw-24px)]">
+          <div className="pointer-events-auto w-90 max-w-[calc(100vw-24px)]">
             <div
               key={toast.key}
               data-state={isToastOpen ? "open" : "closed"}
@@ -304,13 +304,21 @@ export function GraphEditor() {
           );
         }}
         onLoadJson={async (file) => {
-          const text = await readTextFile(file);
-          const raw = JSON.parse(text) as unknown;
+          let raw: unknown;
+          try {
+            const text = await readTextFile(file);
+            raw = JSON.parse(text) as unknown;
+          } catch {
+            setAlgoError("Некорректный JSON");
+            return;
+          }
+
           const loaded = loadGraphSnapshot(raw);
           if (!loaded.ok) {
             setAlgoError(loaded.message);
             return;
           }
+
           setGraph(loaded.graph.nodes, loaded.graph.edges);
           setSteps([]);
           setPlaying(false);
