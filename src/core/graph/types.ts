@@ -39,7 +39,7 @@ export type Selection = SelectionState;
 
 export type EditorMode = "select" | "add_node" | "add_edge" | "delete";
 
-export type MatrixUnweightedSymbol = "_" | "1" | "∞";
+export type MatrixUnweightedSymbol = "-" | "1" | "∞";
 
 export function isLoop(edge: Pick<GraphEdge, "source" | "target">) {
   return edge.source === edge.target;

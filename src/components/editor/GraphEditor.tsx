@@ -2,15 +2,10 @@ import * as React from "react";
 import { AlertTriangleIcon, InfoIcon } from "lucide-react";
 import { BottomToolbar } from "@/components/editor/BottomToolbar";
 import { GraphCanvas } from "@/components/editor/GraphCanvas";
-import { MatrixPanel } from "@/components/editor/MatrixPanel";
+import { MatrixDialog } from "@/components/editor/MatrixDialog";
 import { OverlayDock } from "@/components/editor/OverlayDock";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAlgorithm } from "@/core/algorithms/registry";
-import {
-  buildAdjacencyMatrix,
-  buildIncidenceMatrix,
-  matrixToCsv,
-} from "@/core/graph/matrices";
 import { downloadTextFile, readTextFile } from "@/core/io/download";
 import { loadGraphSnapshot, makeGraphSnapshot } from "@/core/io/graphFile";
 import { selectOverlay, useAlgorithmStore } from "@/store/algorithmStore";
@@ -270,43 +265,15 @@ export function GraphEditor() {
         </div>
       )}
 
-      {bottomPanel !== "none" && (
-        <div className="pointer-events-auto absolute inset-x-3 top-3 bottom-20">
-          {bottomPanel === "adjacency" ? (
-            <MatrixPanel
-              title="Матрица смежности"
-              table={buildAdjacencyMatrix(nodes, edges, matrixUnweightedSymbol)}
-              onExportCsv={() => {
-                const table = buildAdjacencyMatrix(
-                  nodes,
-                  edges,
-                  matrixUnweightedSymbol,
-                );
-                downloadTextFile(
-                  "adjacency.csv",
-                  matrixToCsv(table),
-                  "text/csv",
-                );
-              }}
-              unweightedSymbol={matrixUnweightedSymbol}
-              onChangeUnweightedSymbol={setMatrixUnweightedSymbol}
-            />
-          ) : (
-            <MatrixPanel
-              title="Матрица инцидентности"
-              table={buildIncidenceMatrix(nodes, edges)}
-              onExportCsv={() => {
-                const table = buildIncidenceMatrix(nodes, edges);
-                downloadTextFile(
-                  "incidence.csv",
-                  matrixToCsv(table),
-                  "text/csv",
-                );
-              }}
-            />
-          )}
-        </div>
-      )}
+      <MatrixDialog
+        open={bottomPanel !== "none"}
+        kind={bottomPanel}
+        nodes={nodes}
+        edges={edges}
+        unweightedSymbol={matrixUnweightedSymbol}
+        onChangeUnweightedSymbol={setMatrixUnweightedSymbol}
+        onClose={() => setBottomPanel("none")}
+      />
 
       <OverlayDock
         mode={mode}

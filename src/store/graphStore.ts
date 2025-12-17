@@ -184,7 +184,7 @@ const initialState: GraphState = {
   newEdgeDirected: false,
 
   bottomPanel: "none",
-  matrixUnweightedSymbol: "_",
+  matrixUnweightedSymbol: "-",
 
   lastError: null,
   errorNonce: 0,

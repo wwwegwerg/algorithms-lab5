@@ -68,7 +68,7 @@ export function buildIncidenceMatrix(
   const columnLabels = edges.map((e) => {
     const base = e.directed
       ? `${e.source}->${e.target}`
-      : `${e.source}--${e.target}`;
+      : `${e.source}—${e.target}`;
     const w = e.weight === undefined ? "" : ` w=${e.weight}`;
     return `${e.id}: ${base}${w}`;
   });
