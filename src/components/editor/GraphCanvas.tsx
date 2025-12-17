@@ -335,6 +335,36 @@ export function GraphCanvas({
       }}
     >
       <defs>
+        <pattern
+          id="grid-small"
+          width={24}
+          height={24}
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            d="M 24 0 L 0 0 0 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1}
+            className="text-foreground/5"
+          />
+        </pattern>
+
+        <pattern
+          id="grid-large"
+          width={120}
+          height={120}
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            d="M 120 0 L 0 0 0 120"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1}
+            className="text-foreground/7"
+          />
+        </pattern>
+
         <marker
           id="arrow-default"
           viewBox="0 0 10 10"
@@ -360,6 +390,19 @@ export function GraphCanvas({
           <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
         </marker>
       </defs>
+
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#grid-large)"
+        pointerEvents="none"
+      />
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#grid-small)"
+        pointerEvents="none"
+      />
 
       {boxRect && (
         <rect
