@@ -41,8 +41,15 @@ export function Node({
     ? "fill-none stroke-primary/40"
     : "fill-none stroke-primary/30";
 
+  const hoverEnabled =
+    mode === "select" || mode === "add_edge" || mode === "delete";
+
   return (
-    <g key={node.id} onPointerDown={onPointerDown}>
+    <g
+      key={node.id}
+      onPointerDown={onPointerDown}
+      className={cn(hoverEnabled && "group cursor-pointer")}
+    >
       <circle
         cx={node.x}
         cy={node.y}
@@ -55,9 +62,29 @@ export function Node({
           isSelected || isDraftSource
             ? "stroke-primary"
             : "stroke-muted-foreground",
+          hoverEnabled &&
+            !isSelected &&
+            !isDraftSource &&
+            (mode === "delete"
+              ? "group-hover:stroke-destructive"
+              : "group-hover:stroke-primary"),
         )}
         strokeWidth={2}
       />
+
+      {hoverEnabled && !showRing && (
+        <circle
+          cx={node.x}
+          cy={node.y}
+          r={NODE_R + 5}
+          className={cn(
+            "fill-none opacity-0 transition-opacity group-hover:opacity-100",
+            mode === "delete" ? "stroke-destructive/35" : "stroke-primary/35",
+          )}
+          strokeWidth={2}
+          pointerEvents="none"
+        />
+      )}
 
       {showRing && (
         <circle

@@ -1,4 +1,4 @@
-import type * as React from "react";
+import * as React from "react";
 import type { EdgeId, GraphEdge, Selection } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,8 @@ export type EdgeProps =
       labelPoint: Point | null;
       selection: Selection;
       activeEdgeId?: EdgeId;
+      enableHoverOutline?: boolean;
+      hoverTone?: "primary" | "destructive";
       onPointerDown: (e: React.PointerEvent<SVGPathElement>) => void;
     }
   | {
@@ -31,34 +33,60 @@ export function Edge(props: EdgeProps) {
     );
   }
 
-  const { edge, d, labelPoint, selection, activeEdgeId, onPointerDown } = props;
+  const {
+    edge,
+    d,
+    labelPoint,
+    selection,
+    activeEdgeId,
+    enableHoverOutline,
+    hoverTone,
+    onPointerDown,
+  } = props;
 
   const selected = selection.edgeIds.includes(edge.id);
   const emphasized = activeEdgeId === edge.id;
 
   const label = edge.weight === undefined ? "" : String(edge.weight);
 
+  const hoverable = !!enableHoverOutline && !selected && !emphasized;
+  const hoverIsDestructive = hoverTone === "destructive";
+
   return (
-    <g>
+    <g className={cn(enableHoverOutline && "group")}>
+      {hoverable && (
+        <path
+          d={d}
+          className={cn(
+            "fill-none opacity-0 transition-opacity group-hover:opacity-100",
+            hoverIsDestructive ? "stroke-destructive/35" : "stroke-primary/35",
+          )}
+          strokeWidth={7}
+          pointerEvents="none"
+        />
+      )}
+
       <path
         d={d}
         className={cn(
           "fill-none",
           emphasized || selected ? "stroke-primary" : "stroke-muted-foreground",
+          hoverable &&
+            (hoverIsDestructive
+              ? "group-hover:stroke-destructive"
+              : "group-hover:stroke-primary"),
         )}
         strokeWidth={2}
-        markerEnd={
-          edge.directed
-            ? emphasized || selected
-              ? "url(#arrow-primary)"
-              : "url(#arrow-default)"
-            : undefined
-        }
+        markerEnd={edge.directed ? "url(#arrow-context)" : undefined}
+        pointerEvents="none"
       />
 
       <path
         d={d}
-        className="fill-none stroke-transparent"
+        className={cn(
+          "fill-none stroke-transparent",
+          enableHoverOutline && "cursor-pointer",
+        )}
         strokeWidth={14}
         onPointerDown={onPointerDown}
       />

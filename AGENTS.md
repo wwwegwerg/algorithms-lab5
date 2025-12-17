@@ -15,7 +15,7 @@
 - TS strict: avoid `any`; validate `unknown` with type guards (see `src/core/io/graphFile.ts`).
 - Imports: use `@/` alias; use `import type`; let Prettier sort imports (`prettier.config.js`).
 - Formatting: Prettier defaults (80 cols, semicolons, trailing commas, LF); don’t fight it.
-- React: function components + hooks; keep render logic simple; avoid IIFEs in JSX; use `cond && (...)`.
+- React: function components + hooks; keep render logic simple; avoid IIFEs in JSX; use `cond && (...)` for optional blocks. “Avoid if/else” means avoid unnecessary or duplicative branching (especially in JSX), not “rewrite if/else into ternaries”; prefer whichever is clearer and avoid nested ternary chains.
 - Tailwind: compose class names with `cn()` from `src/lib/utils.ts`.
 - Error handling: prefer `{ ok: true/false, ... }` results or store `lastError`; avoid thrown errors for UI flow.
 - Rules: no Cursor/Copilot instructions found in `.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`.

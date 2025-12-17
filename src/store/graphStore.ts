@@ -202,16 +202,19 @@ export const useGraphStore = create<GraphState & GraphActions>()(
 
       setMode: (mode) =>
         set((s) => {
-          const interaction: InteractionState = { ...s.interaction, mode };
-
-          if (mode === "add_edge") {
-            interaction.selection = emptySelection;
-            interaction.edgeDraft = null;
-          } else {
-            interaction.edgeDraft = null;
+          if (mode === s.interaction.mode) {
+            return { lastError: null };
           }
 
-          return { interaction, lastError: null };
+          return {
+            interaction: {
+              ...s.interaction,
+              mode,
+              selection: emptySelection,
+              edgeDraft: null,
+            },
+            lastError: null,
+          };
         }),
 
       clearSelection: () =>
