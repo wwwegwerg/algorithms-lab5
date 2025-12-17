@@ -1,137 +1,20 @@
 import * as React from "react";
 import { Edge, Node } from "@/components/editor/canvas";
+import {
+  draftEdgePath,
+  edgeLabelPoint,
+  edgePath,
+  normalizeBox,
+  pointInBox,
+  type BoxSelect,
+} from "@/components/editor/canvas/geometry";
 import type {
   GraphEdge,
   GraphNode,
   NodeId,
   Selection,
 } from "@/core/graph/types";
-import { isLoop } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
-
-const NODE_R = 18;
-
-function vecLen(dx: number, dy: number) {
-  return Math.hypot(dx, dy);
-}
-
-type BoxSelect = {
-  start: { x: number; y: number };
-  end: { x: number; y: number };
-  additive: boolean;
-};
-
-function normalizeBox(box: BoxSelect) {
-  const minX = Math.min(box.start.x, box.end.x);
-  const minY = Math.min(box.start.y, box.end.y);
-  const maxX = Math.max(box.start.x, box.end.x);
-  const maxY = Math.max(box.start.y, box.end.y);
-  return {
-    x: minX,
-    y: minY,
-    width: maxX - minX,
-    height: maxY - minY,
-    minX,
-    minY,
-    maxX,
-    maxY,
-  };
-}
-
-function pointInBox(
-  point: { x: number; y: number },
-  box: ReturnType<typeof normalizeBox>,
-) {
-  return (
-    point.x >= box.minX &&
-    point.x <= box.maxX &&
-    point.y >= box.minY &&
-    point.y <= box.maxY
-  );
-}
-
-function edgePath(
-  edge: GraphEdge,
-  nodesById: Map<string, GraphNode>,
-  hasOppositeDirected: boolean,
-) {
-  const s = nodesById.get(edge.source);
-  const t = nodesById.get(edge.target);
-  if (!s || !t) return null;
-
-  if (isLoop(edge)) {
-    const x = s.x;
-    const y = s.y;
-    const r = 18;
-    const ox = 0;
-    const oy = -NODE_R - 18;
-    const cx = x + ox;
-    const cy = y + oy;
-
-    const startX = cx - r;
-    const startY = cy;
-    const endX = cx + r;
-    const endY = cy;
-
-    return `M ${startX} ${startY} A ${r} ${r} 0 1 1 ${endX} ${endY} A ${r} ${r} 0 1 1 ${startX} ${startY}`;
-  }
-
-  const dx = t.x - s.x;
-  const dy = t.y - s.y;
-  const dist = vecLen(dx, dy);
-  if (dist < 0.001) return null;
-
-  const ux = dx / dist;
-  const uy = dy / dist;
-
-  const startX = s.x + ux * NODE_R;
-  const startY = s.y + uy * NODE_R;
-  const endX = t.x - ux * NODE_R;
-  const endY = t.y - uy * NODE_R;
-
-  if (edge.directed && hasOppositeDirected) {
-    const px = -uy;
-    const py = ux;
-    const offset = 22;
-
-    const midX = (startX + endX) / 2 + px * offset;
-    const midY = (startY + endY) / 2 + py * offset;
-
-    return `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
-  }
-
-  return `M ${startX} ${startY} L ${endX} ${endY}`;
-}
-
-function edgeLabelPoint(
-  edge: GraphEdge,
-  nodesById: Map<string, GraphNode>,
-  hasOppositeDirected: boolean,
-) {
-  const s = nodesById.get(edge.source);
-  const t = nodesById.get(edge.target);
-  if (!s || !t) return null;
-
-  if (isLoop(edge)) {
-    return { x: s.x, y: s.y - NODE_R - 44 };
-  }
-
-  const mx = (s.x + t.x) / 2;
-  const my = (s.y + t.y) / 2;
-
-  if (edge.directed && hasOppositeDirected) {
-    const dx = t.x - s.x;
-    const dy = t.y - s.y;
-    const dist = vecLen(dx, dy);
-    if (dist < 0.001) return { x: mx, y: my };
-
-    const px = -dy / dist;
-    const py = dx / dist;
-    return { x: mx + px * 22, y: my + py * 22 };
-  }
-
-  return { x: mx, y: my };
-}
 
 export type GraphCanvasProps = {
   className?: string;
@@ -238,26 +121,10 @@ export function GraphCanvas({
 
   const boxRect = boxSelect ? normalizeBox(boxSelect) : null;
 
-  const draftPathD = React.useMemo(() => {
-    if (!draftSourceNode) return null;
-    if (!cursorPoint) return null;
-
-    const dx = cursorPoint.x - draftSourceNode.x;
-    const dy = cursorPoint.y - draftSourceNode.y;
-    const dist = vecLen(dx, dy);
-    if (dist < 0.001) return null;
-
-    const ux = dx / dist;
-    const uy = dy / dist;
-
-    const startX = draftSourceNode.x + ux * NODE_R;
-    const startY = draftSourceNode.y + uy * NODE_R;
-
-    const endX = cursorPoint.x;
-    const endY = cursorPoint.y;
-
-    return `M ${startX} ${startY} L ${endX} ${endY}`;
-  }, [cursorPoint, draftSourceNode]);
+  const draftPathD = React.useMemo(
+    () => draftEdgePath(draftSourceNode, cursorPoint),
+    [cursorPoint, draftSourceNode],
+  );
 
   return (
     <svg
