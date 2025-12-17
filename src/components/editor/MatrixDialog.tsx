@@ -65,9 +65,9 @@ export function MatrixDialog({
       }}
     >
       {matrixTable && (
-        <DialogContent className="sm:max-w-5xl">
+        <DialogContent className="sm:max-w-160 md:max-w-3xl lg:max-w-5xl">
           <DialogHeader>
-            <div className="flex flex-col gap-3 pr-10 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-3 pr-10 md:flex-row md:items-start md:justify-between">
               <div className="space-y-1">
                 <DialogTitle>
                   {kind === "adjacency"
