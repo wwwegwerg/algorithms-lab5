@@ -1,8 +1,8 @@
 import * as React from "react";
 import { useShallow } from "zustand/shallow";
 import { GraphCanvas } from "@/components/editor/GraphCanvas";
-import { useGraphDataStore } from "@/store/graphDataStore";
-import { useGraphUiStore } from "@/store/graphUiStore";
+import { useGraphDataStore } from "@/stores/graphDataStore";
+import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export function GraphCanvasContainer() {
   const { nodes, edges, updateNode } = useGraphDataStore(

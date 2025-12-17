@@ -2,7 +2,7 @@ import * as React from "react";
 import { AlertTriangleIcon } from "lucide-react";
 import { useShallow } from "zustand/shallow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useGraphDataStore } from "@/store/graphDataStore";
+import { useGraphDataStore } from "@/stores/graphDataStore";
 
 export function EditorToast() {
   const { message, messageKey } = useGraphDataStore(

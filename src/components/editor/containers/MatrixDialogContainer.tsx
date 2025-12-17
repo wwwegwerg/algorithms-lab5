@@ -1,7 +1,7 @@
 import { useShallow } from "zustand/shallow";
 import { MatrixDialog } from "@/components/editor/MatrixDialog";
-import { useGraphDataStore } from "@/store/graphDataStore";
-import { useGraphUiStore } from "@/store/graphUiStore";
+import { useGraphDataStore } from "@/stores/graphDataStore";
+import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export function MatrixDialogContainer() {
   const { nodes, edges } = useGraphDataStore(

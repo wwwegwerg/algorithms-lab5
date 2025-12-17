@@ -2,8 +2,8 @@ import { useShallow } from "zustand/shallow";
 import { BottomToolbar } from "@/components/editor/BottomToolbar";
 import { downloadTextFile, readTextFile } from "@/core/io/download";
 import { loadGraphSnapshot, makeGraphSnapshot } from "@/core/io/graphFile";
-import { useGraphDataStore } from "@/store/graphDataStore";
-import { useGraphUiStore } from "@/store/graphUiStore";
+import { useGraphDataStore } from "@/stores/graphDataStore";
+import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export function BottomToolbarContainer() {
   const {

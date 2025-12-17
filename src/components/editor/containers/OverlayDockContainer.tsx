@@ -1,7 +1,7 @@
 import { useShallow } from "zustand/shallow";
 import { OverlayDock } from "@/components/editor/OverlayDock";
-import { useGraphDataStore } from "@/store/graphDataStore";
-import { useGraphUiStore } from "@/store/graphUiStore";
+import { useGraphDataStore } from "@/stores/graphDataStore";
+import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export function OverlayDockContainer() {
   const { nodes, edges } = useGraphDataStore(

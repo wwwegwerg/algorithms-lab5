@@ -9,7 +9,7 @@ import type {
   SelectionItem,
   SelectionState,
 } from "@/core/graph/types";
-import { useGraphDataStore } from "@/store/graphDataStore";
+import { useGraphDataStore } from "@/stores/graphDataStore";
 
 export type BottomPanel = "none" | "adjacency" | "incidence";
 
@@ -21,6 +21,8 @@ export type InteractionState = {
   edgeDraft: EdgeDraft | null;
 };
 
+type EditTarget = { kind: "node"; id: NodeId } | { kind: "edge"; id: EdgeId };
+
 type GraphUiState = {
   interaction: InteractionState;
 
@@ -31,11 +33,17 @@ type GraphUiState = {
 
   bottomPanel: BottomPanel;
   matrixUnweightedSymbol: MatrixUnweightedSymbol;
+
+  editTarget: EditTarget | null;
 };
 
 type GraphUiActions = {
   resetUi: () => void;
   resetInteraction: () => void;
+
+  openEditNode: (id: NodeId) => void;
+  openEditEdge: (id: EdgeId) => void;
+  closeEditDialog: () => void;
 
   setMode: (mode: EditorMode) => void;
 
@@ -137,6 +145,8 @@ const initialState: GraphUiState = {
 
   bottomPanel: "none",
   matrixUnweightedSymbol: "-",
+
+  editTarget: null,
 };
 
 export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
@@ -148,6 +158,20 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
       set({ ...initialState });
     },
 
+    openEditNode: (id) =>
+      set(() => {
+        useGraphDataStore.getState().clearError();
+        return { editTarget: { kind: "node", id } };
+      }),
+
+    openEditEdge: (id) =>
+      set(() => {
+        useGraphDataStore.getState().clearError();
+        return { editTarget: { kind: "edge", id } };
+      }),
+
+    closeEditDialog: () => set({ editTarget: null }),
+
     resetInteraction: () => {
       useGraphDataStore.getState().clearError();
       set((s) => ({
@@ -157,6 +181,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
           selection: emptySelection,
           edgeDraft: null,
         },
+        editTarget: null,
       }));
     },
 
@@ -176,6 +201,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
             selection: emptySelection,
             edgeDraft: null,
           },
+          editTarget: null,
         };
       }),
 

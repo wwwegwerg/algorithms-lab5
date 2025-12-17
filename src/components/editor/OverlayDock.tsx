@@ -8,7 +8,7 @@ import type {
   GraphNode,
   Selection,
 } from "@/core/graph/types";
-import { useGraphUiStore } from "@/store/graphUiStore";
+import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export type OverlayDockProps = {
   mode: EditorMode;
