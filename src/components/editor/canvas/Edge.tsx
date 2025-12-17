@@ -52,6 +52,18 @@ export function Edge(props: EdgeProps) {
 
   return (
     <g className={cn(enableHoverOutline && "group")}>
+      <path
+        d={d}
+        className={cn(
+          "fill-none stroke-transparent",
+          enableHoverOutline && "cursor-pointer",
+        )}
+        strokeWidth={14}
+        pointerEvents="stroke"
+        onPointerDown={onPointerDown}
+        onDoubleClick={onDoubleClick}
+      />
+
       {hoverable && (
         <path
           d={d}
@@ -60,6 +72,7 @@ export function Edge(props: EdgeProps) {
             hoverIsDestructive ? "stroke-destructive/35" : "stroke-primary/35",
           )}
           strokeWidth={7}
+          markerEnd={edge.directed ? "url(#arrow-context-hover)" : undefined}
           pointerEvents="none"
         />
       )}
@@ -77,17 +90,6 @@ export function Edge(props: EdgeProps) {
         strokeWidth={2}
         markerEnd={edge.directed ? "url(#arrow-context)" : undefined}
         pointerEvents="none"
-      />
-
-      <path
-        d={d}
-        className={cn(
-          "fill-none stroke-transparent",
-          enableHoverOutline && "cursor-pointer",
-        )}
-        strokeWidth={14}
-        onPointerDown={onPointerDown}
-        onDoubleClick={onDoubleClick}
       />
 
       {labelPoint && label.length > 0 && (

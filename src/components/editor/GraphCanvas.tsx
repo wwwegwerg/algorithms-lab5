@@ -515,6 +515,19 @@ export function GraphCanvas({
         >
           <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
         </marker>
+
+        <marker
+          id="arrow-context-hover"
+          viewBox="0 0 10 10"
+          refX="6.6"
+          refY="5"
+          markerWidth="17"
+          markerHeight="17"
+          markerUnits="userSpaceOnUse"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
+        </marker>
       </defs>
 
       <rect

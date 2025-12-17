@@ -31,9 +31,6 @@ export function Node({
 
   const showRing = isDraftSource || isSelected;
   const ringRadius = isDraftSource ? NODE_R + 7 : NODE_R + 5;
-  const ringClassName = isDraftSource
-    ? "fill-none stroke-primary/40"
-    : "fill-none stroke-primary/30";
 
   const hoverEnabled =
     mode === "select" || mode === "add_edge" || mode === "delete";
@@ -83,7 +80,10 @@ export function Node({
           cx={node.x}
           cy={node.y}
           r={ringRadius}
-          className={ringClassName}
+          className={cn(
+            "fill-none",
+            isDraftSource ? "stroke-primary/40" : "stroke-primary/30",
+          )}
           strokeWidth={2}
         />
       )}
@@ -93,9 +93,7 @@ export function Node({
         y={node.y}
         textAnchor="middle"
         dominantBaseline="middle"
-        className={cn(
-          "pointer-events-none fill-foreground text-xs select-none",
-        )}
+        className={"pointer-events-none fill-foreground text-xs select-none"}
       >
         {node.label}
       </text>
