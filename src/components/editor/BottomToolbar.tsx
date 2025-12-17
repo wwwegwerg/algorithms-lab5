@@ -2,9 +2,12 @@ import * as React from "react";
 import {
   CirclePlusIcon,
   DownloadIcon,
+  Eraser,
   FileTextIcon,
   Link2Icon,
   MousePointer2Icon,
+  MoveDiagonal,
+  MoveUpRight,
   PauseIcon,
   PlayIcon,
   StepBackIcon,
@@ -169,7 +172,7 @@ export function BottomToolbar({
                 onClick={() => onChangeMode("delete")}
                 title="Delete"
               >
-                <Trash2Icon />
+                <Eraser />
               </Button>
             </div>
 
@@ -181,6 +184,7 @@ export function BottomToolbar({
                 variant={newEdgeDirected ? "default" : "outline"}
                 onClick={() => onChangeNewEdgeDirected(true)}
               >
+                <MoveUpRight />
                 Directed
               </Button>
               <Button
@@ -188,6 +192,7 @@ export function BottomToolbar({
                 variant={!newEdgeDirected ? "default" : "outline"}
                 onClick={() => onChangeNewEdgeDirected(false)}
               >
+                <MoveDiagonal />
                 Undirected
               </Button>
             </div>

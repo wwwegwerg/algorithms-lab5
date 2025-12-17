@@ -30,16 +30,20 @@ function Row({
   right: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0 font-mono text-[11px] text-white/90">{left}</div>
-      <div className="text-[11px] text-white/80">{right}</div>
+    <div className="grid grid-cols-2 items-start gap-3">
+      <div className="min-w-0 font-mono text-[11px] leading-relaxed text-white/90">
+        {left}
+      </div>
+      <div className="min-w-0 text-right text-[11px] leading-relaxed text-white/80">
+        {right}
+      </div>
     </div>
   );
 }
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded bg-white/10 px-1 py-0.5 font-mono text-[11px] text-white">
+    <span className="inline-flex items-center rounded bg-white/10 px-1 py-0.5 font-mono text-[11px] leading-none text-white">
       {children}
     </span>
   );
@@ -79,9 +83,11 @@ export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
         <Section title="Keyboard">
           <Row
             left={
-              <>
-                <Kbd>Delete</Kbd> / <Kbd>Backspace</Kbd>
-              </>
+              <span className="inline-flex flex-wrap items-center gap-1">
+                <Kbd>Delete</Kbd>
+                <span className="text-white/60">/</span>
+                <Kbd>Backspace</Kbd>
+              </span>
             }
             right="удалить выделенное (все выбранные)"
           />
