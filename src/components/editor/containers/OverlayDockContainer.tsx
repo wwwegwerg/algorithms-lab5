@@ -8,10 +8,11 @@ export function OverlayDockContainer() {
     useShallow((s) => ({ nodes: s.nodes, edges: s.edges })),
   );
 
-  const { mode, selection } = useGraphUiStore(
+  const { mode, selection, canvasCamera } = useGraphUiStore(
     useShallow((s) => ({
       mode: s.interaction.mode,
       selection: s.interaction.selection,
+      canvasCamera: s.canvasCamera,
     })),
   );
 
@@ -33,6 +34,7 @@ export function OverlayDockContainer() {
       selectedEdge={selectedEdge}
       nodesCount={nodes.length}
       edgesCount={edges.length}
+      camera={canvasCamera}
     />
   );
 }

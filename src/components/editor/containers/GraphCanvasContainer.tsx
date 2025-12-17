@@ -30,6 +30,8 @@ export function GraphCanvasContainer() {
     deleteSelection,
     openEditNode,
     openEditEdge,
+    infoOpen,
+    setCanvasCamera,
   } = useGraphUiStore(
     useShallow((s) => ({
       mode: s.interaction.mode,
@@ -48,6 +50,8 @@ export function GraphCanvasContainer() {
       deleteSelection: s.deleteSelection,
       openEditNode: s.openEditNode,
       openEditEdge: s.openEditEdge,
+      infoOpen: s.infoOpen,
+      setCanvasCamera: s.setCanvasCamera,
     })),
   );
 
@@ -77,6 +81,13 @@ export function GraphCanvasContainer() {
       selection={selection}
       mode={mode}
       edgeDraftSourceId={edgeDraftSourceId}
+      onCameraChange={
+        infoOpen
+          ? (camera) => {
+              setCanvasCamera(camera);
+            }
+          : undefined
+      }
       onBackgroundClick={(p, additive) => {
         if (mode === "add_node") {
           addNodeAt(p.x, p.y);

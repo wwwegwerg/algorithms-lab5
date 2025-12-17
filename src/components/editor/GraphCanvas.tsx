@@ -16,6 +16,14 @@ import type {
 } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
+export type CanvasCameraState = {
+  x: number;
+  y: number;
+  scale: number;
+  viewWidth: number;
+  viewHeight: number;
+};
+
 export type GraphCanvasProps = {
   className?: string;
 
@@ -26,6 +34,8 @@ export type GraphCanvasProps = {
   mode: "select" | "add_node" | "add_edge" | "delete";
 
   edgeDraftSourceId: NodeId | null;
+
+  onCameraChange?: (camera: CanvasCameraState) => void;
 
   onBackgroundClick: (
     point: { x: number; y: number },
@@ -84,6 +94,7 @@ export function GraphCanvas({
   selection,
   mode,
   edgeDraftSourceId,
+  onCameraChange,
   onBackgroundClick,
   onNodeClick,
   onNodeDoubleClick,
@@ -97,6 +108,10 @@ export function GraphCanvas({
 
   const cameraRef = React.useRef<Camera>({ x: 0, y: 0, scale: 1 });
   const cameraInitializedRef = React.useRef(false);
+
+  const pendingCameraRef = React.useRef<CanvasCameraState | null>(null);
+  const sentCameraKeyRef = React.useRef<string | null>(null);
+  const cameraRafRef = React.useRef<number | null>(null);
 
   const gridLargeRef = React.useRef<SVGRectElement | null>(null);
   const gridSmallRef = React.useRef<SVGRectElement | null>(null);
@@ -167,7 +182,26 @@ export function GraphCanvas({
 
     applyRect(gridLargeRef.current);
     applyRect(gridSmallRef.current);
-  }, [ensureCameraInitialized]);
+
+    if (!onCameraChange) return;
+
+    pendingCameraRef.current = { x, y, scale, viewWidth, viewHeight };
+
+    if (cameraRafRef.current !== null) return;
+
+    cameraRafRef.current = window.requestAnimationFrame(() => {
+      cameraRafRef.current = null;
+
+      const next = pendingCameraRef.current;
+      if (!next) return;
+
+      const key = `${next.x}|${next.y}|${next.scale}|${next.viewWidth}|${next.viewHeight}`;
+      if (sentCameraKeyRef.current === key) return;
+
+      sentCameraKeyRef.current = key;
+      onCameraChange(next);
+    });
+  }, [ensureCameraInitialized, onCameraChange]);
 
   const resetView = React.useCallback(() => {
     const el = ref.current;
@@ -229,6 +263,19 @@ export function GraphCanvas({
   React.useLayoutEffect(() => {
     applyViewBox();
   }, [applyViewBox]);
+
+  React.useEffect(() => {
+    if (!onCameraChange) return;
+    applyViewBox();
+  }, [applyViewBox, onCameraChange]);
+
+  React.useEffect(() => {
+    return () => {
+      if (cameraRafRef.current === null) return;
+      window.cancelAnimationFrame(cameraRafRef.current);
+      cameraRafRef.current = null;
+    };
+  }, []);
 
   React.useLayoutEffect(() => {
     const el = ref.current;

@@ -6,6 +6,7 @@ import type {
   GraphNode,
   Selection,
 } from "@/core/graph/types";
+import type { CanvasCamera } from "@/stores/graphUiStore";
 
 export type InfoOverlayProps = {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export type InfoOverlayProps = {
   mode: EditorMode;
   nodesCount: number;
   edgesCount: number;
+  camera: CanvasCamera | null;
 };
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -24,6 +26,10 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
       <div className="min-w-0 font-mono text-[11px] text-white/90">{value}</div>
     </div>
   );
+}
+
+function fmt(n: number) {
+  return n.toFixed(2);
 }
 
 function Section({
@@ -51,6 +57,7 @@ export function InfoOverlay({
   mode,
   nodesCount,
   edgesCount,
+  camera,
 }: InfoOverlayProps) {
   if (!isOpen) return null;
 
@@ -72,6 +79,19 @@ export function InfoOverlay({
           <Field label="selectedNodes" value={selection.nodeIds.length} />
           <Field label="selectedEdges" value={selection.edgeIds.length} />
         </Section>
+
+        {camera && (
+          <>
+            <Separator className="bg-white/10" />
+            <Section title="Camera">
+              <Field label="x" value={fmt(camera.x)} />
+              <Field label="y" value={fmt(camera.y)} />
+              <Field label="scale" value={fmt(camera.scale)} />
+              <Field label="viewWidth" value={fmt(camera.viewWidth)} />
+              <Field label="viewHeight" value={fmt(camera.viewHeight)} />
+            </Section>
+          </>
+        )}
 
         {node && (
           <>

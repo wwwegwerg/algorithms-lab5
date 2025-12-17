@@ -1,4 +1,4 @@
-import { InfoIcon, KeyboardIcon } from "lucide-react";
+import { Bug, KeyboardIcon } from "lucide-react";
 import { HelpOverlay } from "@/components/editor/HelpOverlay";
 import { InfoOverlay } from "@/components/editor/InfoOverlay";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import type {
   GraphNode,
   Selection,
 } from "@/core/graph/types";
+import type { CanvasCamera } from "@/stores/graphUiStore";
 import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export type OverlayDockProps = {
@@ -17,6 +18,7 @@ export type OverlayDockProps = {
   selectedEdge: GraphEdge | null;
   nodesCount: number;
   edgesCount: number;
+  camera: CanvasCamera | null;
 };
 
 export function OverlayDock({
@@ -26,6 +28,7 @@ export function OverlayDock({
   selectedEdge,
   nodesCount,
   edgesCount,
+  camera,
 }: OverlayDockProps) {
   const infoOpen = useGraphUiStore((s) => s.infoOpen);
   const toggleInfoOpen = useGraphUiStore((s) => s.toggleInfoOpen);
@@ -44,6 +47,7 @@ export function OverlayDock({
           mode={mode}
           nodesCount={nodesCount}
           edgesCount={edgesCount}
+          camera={camera}
         />
       </div>
 
@@ -63,7 +67,7 @@ export function OverlayDock({
           onClick={toggleInfoOpen}
           title="Info"
         >
-          <InfoIcon />
+          <Bug />
         </Button>
       </div>
     </div>

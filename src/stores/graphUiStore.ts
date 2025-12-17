@@ -21,6 +21,14 @@ export type InteractionState = {
   edgeDraft: EdgeDraft | null;
 };
 
+export type CanvasCamera = {
+  x: number;
+  y: number;
+  scale: number;
+  viewWidth: number;
+  viewHeight: number;
+};
+
 type EditTarget = { kind: "node"; id: NodeId } | { kind: "edge"; id: EdgeId };
 
 type GraphUiState = {
@@ -35,6 +43,8 @@ type GraphUiState = {
   matrixUnweightedSymbol: MatrixUnweightedSymbol;
 
   editTarget: EditTarget | null;
+
+  canvasCamera: CanvasCamera | null;
 };
 
 type GraphUiActions = {
@@ -58,6 +68,8 @@ type GraphUiActions = {
 
   setInfoOpen: (open: boolean) => void;
   toggleInfoOpen: () => void;
+
+  setCanvasCamera: (camera: CanvasCamera | null) => void;
 
   setHelpOpen: (open: boolean) => void;
   toggleHelpOpen: () => void;
@@ -147,6 +159,8 @@ const initialState: GraphUiState = {
   matrixUnweightedSymbol: "-",
 
   editTarget: null,
+
+  canvasCamera: null,
 };
 
 export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
@@ -338,6 +352,8 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
 
     setInfoOpen: (open) => set({ infoOpen: open }),
     toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
+
+    setCanvasCamera: (camera) => set({ canvasCamera: camera }),
 
     setHelpOpen: (open) => set({ helpOpen: open }),
     toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),
