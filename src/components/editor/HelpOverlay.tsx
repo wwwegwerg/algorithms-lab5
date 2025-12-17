@@ -79,6 +79,17 @@ export function HelpOverlay({ isOpen }: HelpOverlayProps) {
           <Row left="select: click blank" right="очистить выделение" />
           <Row left="select: double click node" right="редактировать label" />
           <Row left="select: double click edge" right="редактировать weight" />
+          <Row
+            left={
+              <>
+                <Kbd>Space</Kbd> + drag
+              </>
+            }
+            right="панорамирование"
+          />
+          <Row left="middle mouse: drag" right="панорамирование" />
+          <Row left="scroll" right="панорамирование" />
+          <Row left="Ctrl/⌘ + scroll" right="zoom" />
           <Row left="edge: click blank" right="отменить выбор source" />
         </Section>
         <Separator className="bg-white/10" />
@@ -93,6 +104,7 @@ export function HelpOverlay({ isOpen }: HelpOverlayProps) {
             }
             right="удалить выделенное (все выбранные)"
           />
+          <Row left={<Kbd>0</Kbd>} right="центрировать (0,0)" />
           <Row
             left={<Kbd>Esc</Kbd>}
             right="отменить добавление ребра (edge mode)"
