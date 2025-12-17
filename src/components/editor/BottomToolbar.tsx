@@ -40,12 +40,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { algorithms } from "@/core/algorithms/registry";
 import type {
+  EdgeId,
   EditorMode,
   GraphEdge,
   GraphNode,
-  Selection,
+  NodeId,
+  SelectionState,
 } from "@/core/graph/types";
-import { isLoop } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
 export type BottomToolbarProps = {
@@ -83,12 +84,15 @@ export type BottomToolbarProps = {
   playIntervalMs: number;
   onChangePlayIntervalMs: (ms: number) => void;
 
-  selection: Selection;
-  selectedNode: GraphNode | null;
-  selectedEdge: GraphEdge | null;
-  onUpdateNode: (id: string, patch: Partial<Pick<GraphNode, "label">>) => void;
-  onUpdateEdge: (
-    id: string,
+  selection?: SelectionState;
+  selectedNode?: GraphNode | null;
+  selectedEdge?: GraphEdge | null;
+  onUpdateNode?: (
+    id: NodeId,
+    patch: Partial<Pick<GraphNode, "label" | "x" | "y">>,
+  ) => void;
+  onUpdateEdge?: (
+    id: EdgeId,
     patch: Partial<Pick<GraphEdge, "directed" | "weight">>,
   ) => void;
 };
@@ -117,18 +121,7 @@ export function BottomToolbar({
   onNext,
   playIntervalMs,
   onChangePlayIntervalMs,
-  selection,
-  selectedNode,
-  selectedEdge,
-  onUpdateNode,
-  onUpdateEdge,
 }: BottomToolbarProps) {
-  function parseOptionalNumber(value: string) {
-    if (value.trim().length === 0) return undefined;
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
-
   const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   return (
@@ -371,63 +364,6 @@ export function BottomToolbar({
                 }}
               />
             </div>
-
-            {selection.focus?.kind === "node" && selectedNode && (
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-foreground/60">label</div>
-                <Input
-                  className="h-8 w-45"
-                  value={selectedNode.label}
-                  onChange={(e) =>
-                    onUpdateNode(selectedNode.id, { label: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selection.focus?.kind === "edge" && selectedEdge && (
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-foreground/60">
-                  {selectedEdge.id}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant={selectedEdge.directed ? "default" : "outline"}
-                    disabled={isLoop(selectedEdge)}
-                    onClick={() =>
-                      onUpdateEdge(selectedEdge.id, { directed: true })
-                    }
-                  >
-                    D
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={!selectedEdge.directed ? "default" : "outline"}
-                    onClick={() =>
-                      onUpdateEdge(selectedEdge.id, { directed: false })
-                    }
-                  >
-                    U
-                  </Button>
-                </div>
-                <Input
-                  className="h-8 w-30"
-                  inputMode="decimal"
-                  placeholder="weight"
-                  value={
-                    selectedEdge.weight === undefined
-                      ? ""
-                      : String(selectedEdge.weight)
-                  }
-                  onChange={(e) => {
-                    const parsed = parseOptionalNumber(e.target.value);
-                    if (parsed === null) return;
-                    onUpdateEdge(selectedEdge.id, { weight: parsed });
-                  }}
-                />
-              </div>
-            )}
           </div>
         </Card>
       </div>
