@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { useGraphDataStore } from "@/stores/graphDataStore";
 import { useGraphUiStore } from "@/stores/graphUiStore";
 
@@ -191,10 +192,22 @@ export function EditObjectDialog() {
           )}
 
           <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={closeEditDialog}>
+            <Button
+              variant="outline"
+              onClick={closeEditDialog}
+              className="cursor-pointer"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={!canSubmit}>
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              className={cn(
+                canSubmit
+                  ? "cursor-pointer"
+                  : "cursor-not-allowed disabled:pointer-events-auto",
+              )}
+            >
               Save
             </Button>
           </DialogFooter>
