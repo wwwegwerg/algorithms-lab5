@@ -1,4 +1,3 @@
-import type * as React from "react";
 import type {
   EditorMode,
   GraphNode,
@@ -15,10 +14,6 @@ export type NodeProps = {
   selection: Selection;
   edgeDraftSourceId: NodeId | null;
 
-  isVisited: boolean;
-  isFrontier: boolean;
-  isActive: boolean;
-
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
 };
 
@@ -27,9 +22,6 @@ export function Node({
   mode,
   selection,
   edgeDraftSourceId,
-  isVisited,
-  isFrontier,
-  isActive,
   onPointerDown,
 }: NodeProps) {
   const isSelected = selection.nodeIds.includes(node.id);
@@ -56,9 +48,6 @@ export function Node({
         r={NODE_R}
         className={cn(
           "fill-background",
-          isVisited && "fill-accent",
-          isFrontier && "fill-secondary",
-          isActive && "fill-primary",
           isSelected || isDraftSource
             ? "stroke-primary"
             : "stroke-muted-foreground",
@@ -102,8 +91,7 @@ export function Node({
         textAnchor="middle"
         dominantBaseline="middle"
         className={cn(
-          "pointer-events-none text-xs select-none",
-          isActive ? "fill-primary-foreground" : "fill-foreground",
+          "pointer-events-none fill-foreground text-xs select-none",
         )}
       >
         {node.label}

@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Edge, Node } from "@/components/editor/canvas";
-import type { OverlayState } from "@/core/algorithms/types";
 import type {
   GraphEdge,
   GraphNode,
@@ -145,8 +144,6 @@ export type GraphCanvasProps = {
 
   edgeDraftSourceId: NodeId | null;
 
-  overlay: OverlayState | null;
-
   onBackgroundClick: (
     point: { x: number; y: number },
     additive: boolean,
@@ -171,7 +168,6 @@ export function GraphCanvas({
   selection,
   mode,
   edgeDraftSourceId,
-  overlay,
   onBackgroundClick,
   onNodeClick,
   onEdgeClick,
@@ -234,11 +230,6 @@ export function GraphCanvas({
     if (mode === "add_edge" && edgeDraftSourceId) return;
     setCursorPoint(null);
   }, [edgeDraftSourceId, mode]);
-
-  const visited = new Set(overlay?.visitedNodeIds ?? []);
-  const frontier = new Set(overlay?.frontierNodeIds ?? []);
-  const active = new Set(overlay?.activeNodeIds ?? []);
-  const activeEdgeId = overlay?.activeEdgeId;
 
   const draftSourceNode =
     mode === "add_edge" && edgeDraftSourceId
@@ -458,7 +449,6 @@ export function GraphCanvas({
             d={d}
             labelPoint={edgeLabelPoint(e, nodesById, hasOpposite(e))}
             selection={selection}
-            activeEdgeId={activeEdgeId}
             enableHoverOutline={mode === "select" || mode === "delete"}
             hoverTone={mode === "delete" ? "destructive" : "primary"}
             onPointerDown={(ev) => {
@@ -480,9 +470,6 @@ export function GraphCanvas({
           mode={mode}
           selection={selection}
           edgeDraftSourceId={edgeDraftSourceId}
-          isVisited={visited.has(n.id)}
-          isFrontier={frontier.has(n.id)}
-          isActive={active.has(n.id)}
           onPointerDown={(e) => {
             e.stopPropagation();
 

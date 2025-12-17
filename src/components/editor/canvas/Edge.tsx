@@ -1,5 +1,4 @@
-import * as React from "react";
-import type { EdgeId, GraphEdge, Selection } from "@/core/graph/types";
+import type { GraphEdge, Selection } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
 export type Point = { x: number; y: number };
@@ -11,7 +10,6 @@ export type EdgeProps =
       d: string;
       labelPoint: Point | null;
       selection: Selection;
-      activeEdgeId?: EdgeId;
       enableHoverOutline?: boolean;
       hoverTone?: "primary" | "destructive";
       onPointerDown: (e: React.PointerEvent<SVGPathElement>) => void;
@@ -38,18 +36,16 @@ export function Edge(props: EdgeProps) {
     d,
     labelPoint,
     selection,
-    activeEdgeId,
     enableHoverOutline,
     hoverTone,
     onPointerDown,
   } = props;
 
   const selected = selection.edgeIds.includes(edge.id);
-  const emphasized = activeEdgeId === edge.id;
 
   const label = edge.weight === undefined ? "" : String(edge.weight);
 
-  const hoverable = !!enableHoverOutline && !selected && !emphasized;
+  const hoverable = !!enableHoverOutline && !selected;
   const hoverIsDestructive = hoverTone === "destructive";
 
   return (
@@ -70,7 +66,7 @@ export function Edge(props: EdgeProps) {
         d={d}
         className={cn(
           "fill-none",
-          emphasized || selected ? "stroke-primary" : "stroke-muted-foreground",
+          selected ? "stroke-primary" : "stroke-muted-foreground",
           hoverable &&
             (hoverIsDestructive
               ? "group-hover:stroke-destructive"

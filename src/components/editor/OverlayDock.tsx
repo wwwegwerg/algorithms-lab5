@@ -8,7 +8,7 @@ import type {
   GraphNode,
   Selection,
 } from "@/core/graph/types";
-import { useGraphStore } from "@/store/graphStore";
+import { useGraphUiStore } from "@/store/graphUiStore";
 
 export type OverlayDockProps = {
   mode: EditorMode;
@@ -27,10 +27,10 @@ export function OverlayDock({
   nodesCount,
   edgesCount,
 }: OverlayDockProps) {
-  const infoOpen = useGraphStore((s) => s.infoOpen);
-  const toggleInfoOpen = useGraphStore((s) => s.toggleInfoOpen);
-  const helpOpen = useGraphStore((s) => s.helpOpen);
-  const toggleHelpOpen = useGraphStore((s) => s.toggleHelpOpen);
+  const infoOpen = useGraphUiStore((s) => s.infoOpen);
+  const toggleInfoOpen = useGraphUiStore((s) => s.toggleInfoOpen);
+  const helpOpen = useGraphUiStore((s) => s.helpOpen);
+  const toggleHelpOpen = useGraphUiStore((s) => s.toggleHelpOpen);
 
   return (
     <div className="pointer-events-none absolute top-3 right-3 z-40 flex items-start gap-2">

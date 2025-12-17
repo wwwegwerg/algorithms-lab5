@@ -3,15 +3,10 @@ import {
   CirclePlusIcon,
   DownloadIcon,
   Eraser,
-  FileTextIcon,
   Link2Icon,
   MousePointer2Icon,
   MoveDiagonal,
   MoveUpRight,
-  PauseIcon,
-  PlayIcon,
-  StepBackIcon,
-  StepForwardIcon,
   Table2Icon,
   Trash2Icon,
   UploadIcon,
@@ -28,25 +23,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { algorithms } from "@/core/algorithms/registry";
-import type {
-  EdgeId,
-  EditorMode,
-  GraphEdge,
-  GraphNode,
-  NodeId,
-  SelectionState,
-} from "@/core/graph/types";
+import type { EditorMode } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
 export type BottomToolbarProps = {
@@ -64,37 +42,6 @@ export type BottomToolbarProps = {
   onSaveJson: () => void;
   onLoadJson: (file: File) => void;
   onClearPersistedGraph: () => void;
-
-  nodes: { id: string }[];
-
-  algorithmId: string;
-  onChangeAlgorithmId: (id: string) => void;
-
-  startNodeId: string | null;
-  onChangeStartNodeId: (id: string | null) => void;
-
-  canRun: boolean;
-  onRun: () => void;
-
-  isPlaying: boolean;
-  onTogglePlay: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-
-  playIntervalMs: number;
-  onChangePlayIntervalMs: (ms: number) => void;
-
-  selection?: SelectionState;
-  selectedNode?: GraphNode | null;
-  selectedEdge?: GraphEdge | null;
-  onUpdateNode?: (
-    id: NodeId,
-    patch: Partial<Pick<GraphNode, "label" | "x" | "y">>,
-  ) => void;
-  onUpdateEdge?: (
-    id: EdgeId,
-    patch: Partial<Pick<GraphEdge, "directed" | "weight">>,
-  ) => void;
 };
 
 export function BottomToolbar({
@@ -108,19 +55,6 @@ export function BottomToolbar({
   onSaveJson,
   onLoadJson,
   onClearPersistedGraph,
-  nodes,
-  algorithmId,
-  onChangeAlgorithmId,
-  startNodeId,
-  onChangeStartNodeId,
-  canRun,
-  onRun,
-  isPlaying,
-  onTogglePlay,
-  onPrev,
-  onNext,
-  playIntervalMs,
-  onChangePlayIntervalMs,
 }: BottomToolbarProps) {
   const inputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -274,95 +208,6 @@ export function BottomToolbar({
                 <Table2Icon />
                 Inc
               </Button>
-            </div>
-          </div>
-        </Card>
-
-        <Card size="sm" className="min-w-[320px] flex-1 gap-0 py-0">
-          <div className="flex flex-wrap items-center gap-2 p-2">
-            <div className="flex min-w-60 items-center gap-2">
-              <FileTextIcon className="size-4 text-foreground/70" />
-              <Select
-                items={algorithms.map((a) => ({ label: a.label, value: a.id }))}
-                value={algorithmId}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  onChangeAlgorithmId(value);
-                }}
-              >
-                <SelectTrigger className="h-8 w-55">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {algorithms.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Select
-                items={[
-                  { label: "(start node)", value: null },
-                  ...nodes.map((n) => ({ label: n.id, value: n.id })),
-                ]}
-                value={startNodeId}
-                onValueChange={(value) => onChangeStartNodeId(value)}
-              >
-                <SelectTrigger className="h-8 w-42.5">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value={null}>(start node)</SelectItem>
-                    {nodes.map((n) => (
-                      <SelectItem key={n.id} value={n.id}>
-                        {n.id}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onRun}
-                disabled={!canRun}
-              >
-                Run
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <Button size="sm" variant="outline" onClick={onPrev}>
-                <StepBackIcon />
-              </Button>
-              <Button size="sm" variant="outline" onClick={onTogglePlay}>
-                {isPlaying ? <PauseIcon /> : <PlayIcon />}
-              </Button>
-              <Button size="sm" variant="outline" onClick={onNext}>
-                <StepForwardIcon />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-foreground/60">ms</div>
-              <Input
-                className="h-8 w-23"
-                type="number"
-                value={String(playIntervalMs)}
-                onChange={(e) => {
-                  const next = Number(e.target.value);
-                  if (!Number.isFinite(next)) return;
-                  onChangePlayIntervalMs(next);
-                }}
-              />
             </div>
           </div>
         </Card>
