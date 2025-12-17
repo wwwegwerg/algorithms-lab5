@@ -13,6 +13,7 @@ export type EdgeProps =
       enableHoverOutline?: boolean;
       hoverTone?: "primary" | "destructive";
       onPointerDown: (e: React.PointerEvent<SVGPathElement>) => void;
+      onDoubleClick?: (e: React.MouseEvent<SVGPathElement>) => void;
     }
   | {
       variant: "draft";
@@ -39,6 +40,7 @@ export function Edge(props: EdgeProps) {
     enableHoverOutline,
     hoverTone,
     onPointerDown,
+    onDoubleClick,
   } = props;
 
   const selected = selection.edgeIds.includes(edge.id);
@@ -85,6 +87,7 @@ export function Edge(props: EdgeProps) {
         )}
         strokeWidth={14}
         onPointerDown={onPointerDown}
+        onDoubleClick={onDoubleClick}
       />
 
       {labelPoint && label.length > 0 && (

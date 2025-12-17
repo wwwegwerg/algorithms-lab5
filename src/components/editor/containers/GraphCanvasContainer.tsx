@@ -28,6 +28,8 @@ export function GraphCanvasContainer() {
     deleteNode,
     deleteEdge,
     deleteSelection,
+    openEditNode,
+    openEditEdge,
   } = useGraphUiStore(
     useShallow((s) => ({
       mode: s.interaction.mode,
@@ -44,6 +46,8 @@ export function GraphCanvasContainer() {
       deleteNode: s.deleteNode,
       deleteEdge: s.deleteEdge,
       deleteSelection: s.deleteSelection,
+      openEditNode: s.openEditNode,
+      openEditEdge: s.openEditEdge,
     })),
   );
 
@@ -116,6 +120,14 @@ export function GraphCanvasContainer() {
       }}
       onNodeDrag={(id, x, y) => {
         updateNode(id, { x, y });
+      }}
+      onNodeDoubleClick={(id) => {
+        if (mode !== "select") return;
+        openEditNode(id);
+      }}
+      onEdgeDoubleClick={(id) => {
+        if (mode !== "select") return;
+        openEditEdge(id);
       }}
       onBoxSelect={applyBoxSelection}
       onCancelEdgeDraft={() => cancelEdgeDraft()}

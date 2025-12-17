@@ -1,4 +1,5 @@
 import { BottomToolbarContainer } from "@/components/editor/containers/BottomToolbarContainer";
+import { EditObjectDialog } from "@/components/editor/containers/EditObjectDialog";
 import { EditorToast } from "@/components/editor/containers/EditorToast";
 import { GraphCanvasContainer } from "@/components/editor/containers/GraphCanvasContainer";
 import { MatrixDialogContainer } from "@/components/editor/containers/MatrixDialogContainer";
@@ -12,6 +13,7 @@ export function GraphEditor() {
       <MatrixDialogContainer />
       <OverlayDockContainer />
       <BottomToolbarContainer />
+      <EditObjectDialog />
     </div>
   );
 }

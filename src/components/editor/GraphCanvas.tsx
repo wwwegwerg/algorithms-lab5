@@ -32,7 +32,9 @@ export type GraphCanvasProps = {
     additive: boolean,
   ) => void;
   onNodeClick: (id: NodeId, additive: boolean) => void;
+  onNodeDoubleClick: (id: NodeId) => void;
   onEdgeClick: (id: string, additive: boolean) => void;
+  onEdgeDoubleClick: (id: string) => void;
   onBoxSelect: (
     nodeIds: NodeId[],
     edgeIds: string[],
@@ -53,7 +55,9 @@ export function GraphCanvas({
   edgeDraftSourceId,
   onBackgroundClick,
   onNodeClick,
+  onNodeDoubleClick,
   onEdgeClick,
+  onEdgeDoubleClick,
   onBoxSelect,
   onNodeDrag,
   onCancelEdgeDraft,
@@ -309,6 +313,10 @@ export function GraphCanvas({
               ev.stopPropagation();
               onEdgeClick(e.id, ev.shiftKey);
             }}
+            onDoubleClick={(ev) => {
+              ev.stopPropagation();
+              onEdgeDoubleClick(e.id);
+            }}
           />
         );
       })}
@@ -335,6 +343,10 @@ export function GraphCanvas({
             }
 
             onNodeClick(n.id, e.shiftKey);
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onNodeDoubleClick(n.id);
           }}
         />
       ))}

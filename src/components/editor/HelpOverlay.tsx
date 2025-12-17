@@ -1,9 +1,8 @@
 import type * as React from "react";
-import type { EditorMode } from "@/core/graph/types";
+import { Separator } from "@/components/ui/separator";
 
 export type HelpOverlayProps = {
   isOpen: boolean;
-  mode: EditorMode;
 };
 
 function Section({
@@ -50,7 +49,7 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
+export function HelpOverlay({ isOpen }: HelpOverlayProps) {
   if (!isOpen) return null;
 
   return (
@@ -65,7 +64,7 @@ export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
           <Row left={<Kbd>edge</Kbd>} right="клик по source, затем по target" />
           <Row left={<Kbd>delete</Kbd>} right="клик по вершине/ребру удаляет" />
         </Section>
-
+        <Separator className="bg-white/10" />
         <Section title="Mouse">
           <Row left="select: drag node" right="переместить вершину" />
           <Row left="select: drag blank" right="прямоугольное выделение" />
@@ -78,9 +77,11 @@ export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
             right="добавить к выделению"
           />
           <Row left="select: click blank" right="очистить выделение" />
+          <Row left="select: double click node" right="редактировать label" />
+          <Row left="select: double click edge" right="редактировать weight" />
           <Row left="edge: click blank" right="отменить выбор source" />
         </Section>
-
+        <Separator className="bg-white/10" />
         <Section title="Keyboard">
           <Row
             left={
@@ -97,10 +98,6 @@ export function HelpOverlay({ isOpen, mode }: HelpOverlayProps) {
             right="отменить добавление ребра (edge mode)"
           />
         </Section>
-
-        <div className="border-t border-white/10 pt-2 text-[11px] text-white/70">
-          mode: <span className="font-mono text-white/90">{mode}</span>
-        </div>
       </div>
     </div>
   );

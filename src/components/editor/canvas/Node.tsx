@@ -15,6 +15,7 @@ export type NodeProps = {
   edgeDraftSourceId: NodeId | null;
 
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
+  onDoubleClick?: (e: React.MouseEvent<SVGGElement>) => void;
 };
 
 export function Node({
@@ -23,6 +24,7 @@ export function Node({
   selection,
   edgeDraftSourceId,
   onPointerDown,
+  onDoubleClick,
 }: NodeProps) {
   const isSelected = selection.nodeIds.includes(node.id);
   const isDraftSource = mode === "add_edge" && edgeDraftSourceId === node.id;
@@ -40,6 +42,7 @@ export function Node({
     <g
       key={node.id}
       onPointerDown={onPointerDown}
+      onDoubleClick={onDoubleClick}
       className={cn(hoverEnabled && "group cursor-pointer")}
     >
       <circle

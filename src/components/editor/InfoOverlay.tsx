@@ -1,4 +1,5 @@
 import type * as React from "react";
+import { Separator } from "@/components/ui/separator";
 import type {
   EditorMode,
   GraphEdge,
@@ -73,25 +74,34 @@ export function InfoOverlay({
         </Section>
 
         {node && (
-          <Section title="Node">
-            <Field label="id" value={node.id} />
-            <Field label="label" value={node.label} />
-            <Field label="x" value={Math.round(node.x)} />
-            <Field label="y" value={Math.round(node.y)} />
-          </Section>
+          <>
+            <Separator className="bg-white/10" />
+            <Section title="Node">
+              <Field label="id" value={node.id} />
+              <Field label="label" value={node.label} />
+              <Field label="x" value={Math.round(node.x)} />
+              <Field label="y" value={Math.round(node.y)} />
+            </Section>
+          </>
         )}
 
         {edge && (
-          <Section title="Edge">
-            <Field label="id" value={edge.id} />
-            <Field label="directed" value={edge.directed ? "true" : "false"} />
-            <Field label="source" value={edge.source} />
-            <Field label="target" value={edge.target} />
-            <Field
-              label="weight"
-              value={edge.weight === undefined ? "(none)" : edge.weight}
-            />
-          </Section>
+          <>
+            <Separator className="bg-white/10" />
+            <Section title="Edge">
+              <Field label="id" value={edge.id} />
+              <Field
+                label="directed"
+                value={edge.directed ? "true" : "false"}
+              />
+              <Field label="source" value={edge.source} />
+              <Field label="target" value={edge.target} />
+              <Field
+                label="weight"
+                value={edge.weight === undefined ? "(none)" : edge.weight}
+              />
+            </Section>
+          </>
         )}
       </div>
     </div>
