@@ -133,16 +133,44 @@ export function GraphCanvas({
   } | null>(null);
   const [boxSelect, setBoxSelect] = React.useState<BoxSelect | null>(null);
 
-  const nodesById = new Map(nodes.map((n) => [n.id, n]));
+  const nodesById = React.useMemo(() => {
+    return new Map(nodes.map((n) => [n.id, n]));
+  }, [nodes]);
 
-  const reverseDirected = new Set<string>();
-  for (const e of edges) {
-    if (!e.directed) continue;
-    reverseDirected.add(`${e.source}->${e.target}`);
-  }
+  const reverseDirected = React.useMemo(() => {
+    const next = new Set<string>();
+    for (const edge of edges) {
+      if (!edge.directed) continue;
+      next.add(`${edge.source}->${edge.target}`);
+    }
+    return next;
+  }, [edges]);
 
-  const hasOpposite = (edge: GraphEdge) =>
-    edge.directed && reverseDirected.has(`${edge.target}->${edge.source}`);
+  const edgeGeometry = React.useMemo(() => {
+    const dById = new Map<string, string | null>();
+    const labelPointById = new Map<string, { x: number; y: number } | null>();
+
+    for (const edge of edges) {
+      const hasOppositeDirected =
+        edge.directed && reverseDirected.has(`${edge.target}->${edge.source}`);
+
+      dById.set(edge.id, edgePath(edge, nodesById, hasOppositeDirected));
+      labelPointById.set(
+        edge.id,
+        edgeLabelPoint(edge, nodesById, hasOppositeDirected),
+      );
+    }
+
+    return { dById, labelPointById };
+  }, [edges, nodesById, reverseDirected]);
+
+  const selectedNodeSet = React.useMemo(() => {
+    return new Set(selection.nodeIds);
+  }, [selection.nodeIds]);
+
+  const selectedEdgeSet = React.useMemo(() => {
+    return new Set(selection.edgeIds);
+  }, [selection.edgeIds]);
 
   const ensureCameraInitialized = React.useCallback((el: SVGSVGElement) => {
     if (cameraInitializedRef.current) return;
@@ -264,6 +292,65 @@ export function GraphCanvas({
       startY: y,
     });
   }, []);
+
+  const handleEdgePointerDown = React.useCallback(
+    (id: string, e: React.PointerEvent<SVGPathElement>) => {
+      // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
+      // Pan shortcuts: middle drag OR Space + left drag.
+      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
+        e.preventDefault();
+        e.stopPropagation();
+        startPan(e);
+        return;
+      }
+
+      e.stopPropagation();
+      onEdgeClick(id, e.shiftKey);
+    },
+    [onEdgeClick, startPan],
+  );
+
+  const handleEdgeDoubleClick = React.useCallback(
+    (id: string, e: React.MouseEvent<SVGPathElement>) => {
+      e.stopPropagation();
+      onEdgeDoubleClick(id);
+    },
+    [onEdgeDoubleClick],
+  );
+
+  const handleNodePointerDown = React.useCallback(
+    (id: NodeId, e: React.PointerEvent<SVGGElement>) => {
+      // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
+      // Pan shortcuts: middle drag OR Space + left drag.
+      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
+        e.preventDefault();
+        e.stopPropagation();
+        startPan(e);
+        return;
+      }
+
+      e.stopPropagation();
+
+      if (mode === "select" && !e.shiftKey) {
+        const node = nodesById.get(id);
+        const p = clientToWorldPoint(e.clientX, e.clientY);
+        if (node && p) {
+          setDragging({ id, dx: p.x - node.x, dy: p.y - node.y });
+        }
+      }
+
+      onNodeClick(id, e.shiftKey);
+    },
+    [clientToWorldPoint, mode, nodesById, onNodeClick, startPan],
+  );
+
+  const handleNodeDoubleClick = React.useCallback(
+    (id: NodeId, e: React.MouseEvent<SVGGElement>) => {
+      e.stopPropagation();
+      onNodeDoubleClick(id);
+    },
+    [onNodeDoubleClick],
+  );
 
   React.useLayoutEffect(() => {
     applyViewBox();
@@ -483,7 +570,7 @@ export function GraphCanvas({
             if (pointInBox({ x: s.x, y: s.y }, rect)) return true;
             if (pointInBox({ x: t.x, y: t.y }, rect)) return true;
 
-            const lp = edgeLabelPoint(edge, nodesById, hasOpposite(edge));
+            const lp = edgeGeometry.labelPointById.get(edge.id) ?? null;
             return lp ? pointInBox(lp, rect) : false;
           })
           .map((edge) => edge.id);
@@ -616,7 +703,7 @@ export function GraphCanvas({
 
         {/* Edges */}
         {edges.map((e) => {
-          const d = edgePath(e, nodesById, hasOpposite(e));
+          const d = edgeGeometry.dById.get(e.id) ?? null;
           if (!d) return null;
 
           return (
@@ -625,30 +712,12 @@ export function GraphCanvas({
               variant="edge"
               edge={e}
               d={d}
-              labelPoint={edgeLabelPoint(e, nodesById, hasOpposite(e))}
-              selection={selection}
+              labelPoint={edgeGeometry.labelPointById.get(e.id) ?? null}
+              selected={selectedEdgeSet.has(e.id)}
               enableHoverOutline={mode === "select" || mode === "delete"}
               hoverTone={mode === "delete" ? "destructive" : "primary"}
-              onPointerDown={(ev) => {
-                // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
-                // Pan shortcuts: middle drag OR Space + left drag.
-                if (
-                  ev.button === 1 ||
-                  (ev.button === 0 && spacePressedRef.current)
-                ) {
-                  ev.preventDefault();
-                  ev.stopPropagation();
-                  startPan(ev);
-                  return;
-                }
-
-                ev.stopPropagation();
-                onEdgeClick(e.id, ev.shiftKey);
-              }}
-              onDoubleClick={(ev) => {
-                ev.stopPropagation();
-                onEdgeDoubleClick(e.id);
-              }}
+              onPointerDown={handleEdgePointerDown}
+              onDoubleClick={handleEdgeDoubleClick}
             />
           );
         })}
@@ -662,36 +731,10 @@ export function GraphCanvas({
             key={n.id}
             node={n}
             mode={mode}
-            selection={selection}
+            isSelected={selectedNodeSet.has(n.id)}
             edgeDraftSourceId={edgeDraftSourceId}
-            onPointerDown={(e) => {
-              // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
-              // Pan shortcuts: middle drag OR Space + left drag.
-              if (
-                e.button === 1 ||
-                (e.button === 0 && spacePressedRef.current)
-              ) {
-                e.preventDefault();
-                e.stopPropagation();
-                startPan(e);
-                return;
-              }
-
-              e.stopPropagation();
-
-              if (mode === "select" && !e.shiftKey) {
-                const p = clientToWorldPoint(e.clientX, e.clientY);
-                if (p) {
-                  setDragging({ id: n.id, dx: p.x - n.x, dy: p.y - n.y });
-                }
-              }
-
-              onNodeClick(n.id, e.shiftKey);
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              onNodeDoubleClick(n.id);
-            }}
+            onPointerDown={handleNodePointerDown}
+            onDoubleClick={handleNodeDoubleClick}
           />
         ))}
       </g>

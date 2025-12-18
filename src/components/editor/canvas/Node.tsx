@@ -1,9 +1,5 @@
-import type {
-  EditorMode,
-  GraphNode,
-  NodeId,
-  Selection,
-} from "@/core/graph/types";
+import * as React from "react";
+import type { EditorMode, GraphNode, NodeId } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
 const NODE_R = 18;
@@ -11,22 +7,21 @@ const NODE_R = 18;
 export type NodeProps = {
   node: GraphNode;
   mode: EditorMode;
-  selection: Selection;
+  isSelected: boolean;
   edgeDraftSourceId: NodeId | null;
 
-  onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
-  onDoubleClick?: (e: React.MouseEvent<SVGGElement>) => void;
+  onPointerDown: (id: NodeId, e: React.PointerEvent<SVGGElement>) => void;
+  onDoubleClick?: (id: NodeId, e: React.MouseEvent<SVGGElement>) => void;
 };
 
-export function Node({
+function NodeInner({
   node,
   mode,
-  selection,
+  isSelected,
   edgeDraftSourceId,
   onPointerDown,
   onDoubleClick,
 }: NodeProps) {
-  const isSelected = selection.nodeIds.includes(node.id);
   const isDraftSource = mode === "add_edge" && edgeDraftSourceId === node.id;
 
   const showRing = isDraftSource || isSelected;
@@ -38,8 +33,10 @@ export function Node({
   return (
     <g
       key={node.id}
-      onPointerDown={onPointerDown}
-      onDoubleClick={onDoubleClick}
+      onPointerDown={(e) => onPointerDown(node.id, e)}
+      onDoubleClick={
+        onDoubleClick ? (e) => onDoubleClick(node.id, e) : undefined
+      }
       className={cn(hoverEnabled && "group cursor-pointer")}
     >
       <circle
@@ -100,3 +97,5 @@ export function Node({
     </g>
   );
 }
+
+export const Node = React.memo(NodeInner);

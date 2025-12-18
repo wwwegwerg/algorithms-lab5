@@ -1,4 +1,5 @@
-import type { GraphEdge, Selection } from "@/core/graph/types";
+import * as React from "react";
+import type { GraphEdge } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
 export type Point = { x: number; y: number };
@@ -9,18 +10,21 @@ export type EdgeProps =
       edge: GraphEdge;
       d: string;
       labelPoint: Point | null;
-      selection: Selection;
+      selected: boolean;
       enableHoverOutline?: boolean;
       hoverTone?: "primary" | "destructive";
-      onPointerDown: (e: React.PointerEvent<SVGPathElement>) => void;
-      onDoubleClick?: (e: React.MouseEvent<SVGPathElement>) => void;
+      onPointerDown: (
+        id: string,
+        e: React.PointerEvent<SVGPathElement>,
+      ) => void;
+      onDoubleClick?: (id: string, e: React.MouseEvent<SVGPathElement>) => void;
     }
   | {
       variant: "draft";
       d: string;
     };
 
-export function Edge(props: EdgeProps) {
+function EdgeInner(props: EdgeProps) {
   if (props.variant === "draft") {
     return (
       <path
@@ -36,14 +40,12 @@ export function Edge(props: EdgeProps) {
     edge,
     d,
     labelPoint,
-    selection,
+    selected,
     enableHoverOutline,
     hoverTone,
     onPointerDown,
     onDoubleClick,
   } = props;
-
-  const selected = selection.edgeIds.includes(edge.id);
 
   const label = edge.weight === undefined ? "" : String(edge.weight);
 
@@ -60,8 +62,10 @@ export function Edge(props: EdgeProps) {
         )}
         strokeWidth={14}
         pointerEvents="stroke"
-        onPointerDown={onPointerDown}
-        onDoubleClick={onDoubleClick}
+        onPointerDown={(e) => onPointerDown(edge.id, e)}
+        onDoubleClick={
+          onDoubleClick ? (e) => onDoubleClick(edge.id, e) : undefined
+        }
       />
 
       {hoverable && (
@@ -106,3 +110,5 @@ export function Edge(props: EdgeProps) {
     </g>
   );
 }
+
+export const Edge = React.memo(EdgeInner);
