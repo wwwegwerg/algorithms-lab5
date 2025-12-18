@@ -26,6 +26,7 @@ import type {
   MatrixUnweightedSymbol,
 } from "@/core/graph/types";
 import { downloadTextFile } from "@/core/io/download";
+import { cn } from "@/lib/utils";
 
 export type MatrixDialogProps = {
   open: boolean;
@@ -158,9 +159,14 @@ export function MatrixDialog({
                 {matrixTable.rowLabels.map((label, rowIndex) => (
                   <TableRow
                     key={label}
-                    className="[&>:not(:last-child)]:border-r"
+                    className="odd:bg-muted hover:bg-transparent odd:hover:bg-muted [&>:not(:last-child)]:border-r"
                   >
-                    <TableCell className="sticky left-0 z-10 bg-background text-center font-medium">
+                    <TableCell
+                      className={cn(
+                        "sticky left-0 z-10 bg-background text-center font-medium",
+                        rowIndex % 2 === 0 && "bg-muted",
+                      )}
+                    >
                       {label}
                     </TableCell>
                     {(matrixTable.values[rowIndex] ?? []).map((value, idx) => (
