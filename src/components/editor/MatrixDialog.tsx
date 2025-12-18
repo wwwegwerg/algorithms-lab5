@@ -27,10 +27,11 @@ import type {
 } from "@/core/graph/types";
 import { downloadTextFile } from "@/core/io/download";
 import { cn } from "@/lib/utils";
+import type { MatrixDialogKind } from "@/stores/graphUiStore";
 
 export type MatrixDialogProps = {
   open: boolean;
-  kind: "none" | "adjacency" | "incidence";
+  kind: MatrixDialogKind;
 
   nodes: readonly GraphNode[];
   edges: readonly GraphEdge[];

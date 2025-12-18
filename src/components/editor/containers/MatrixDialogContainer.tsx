@@ -10,27 +10,27 @@ export function MatrixDialogContainer() {
   );
 
   const {
-    bottomPanel,
+    matrixDialogKind,
     matrixUnweightedSymbol,
     setMatrixUnweightedSymbol,
-    setBottomPanel,
+    setMatrixDialogKind,
   } = useGraphUiStore(
     useShallow((s) => ({
-      bottomPanel: s.bottomPanel,
+      matrixDialogKind: s.matrixDialogKind,
       matrixUnweightedSymbol: s.matrixUnweightedSymbol,
       setMatrixUnweightedSymbol: s.setMatrixUnweightedSymbol,
-      setBottomPanel: s.setBottomPanel,
+      setMatrixDialogKind: s.setMatrixDialogKind,
     })),
   );
 
   const onClose = React.useCallback(() => {
-    setBottomPanel("none");
-  }, [setBottomPanel]);
+    setMatrixDialogKind("none");
+  }, [setMatrixDialogKind]);
 
   return (
     <MatrixDialog
-      open={bottomPanel !== "none"}
-      kind={bottomPanel}
+      open={matrixDialogKind !== "none"}
+      kind={matrixDialogKind}
       nodes={nodes}
       edges={edges}
       unweightedSymbol={matrixUnweightedSymbol}

@@ -36,8 +36,8 @@ export type BottomToolbarProps = {
   newEdgeDirected: boolean;
   onChangeNewEdgeDirected: (directed: boolean) => void;
 
-  bottomPanel: "none" | "adjacency" | "incidence";
-  onTogglePanel: (panel: "adjacency" | "incidence") => void;
+  matrixDialogKind: "none" | "adjacency" | "incidence";
+  onToggleMatrixDialog: (kind: "adjacency" | "incidence") => void;
 
   onSaveJson: () => void;
   onLoadJson: (file: File) => void;
@@ -50,8 +50,8 @@ export function BottomToolbar({
   onChangeMode,
   newEdgeDirected,
   onChangeNewEdgeDirected,
-  bottomPanel,
-  onTogglePanel,
+  matrixDialogKind,
+  onToggleMatrixDialog,
   onSaveJson,
   onLoadJson,
   onClearPersistedGraph,
@@ -194,16 +194,20 @@ export function BottomToolbar({
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
-                variant={bottomPanel === "adjacency" ? "default" : "outline"}
-                onClick={() => onTogglePanel("adjacency")}
+                variant={
+                  matrixDialogKind === "adjacency" ? "default" : "outline"
+                }
+                onClick={() => onToggleMatrixDialog("adjacency")}
               >
                 <Table2Icon />
                 Adj
               </Button>
               <Button
                 size="sm"
-                variant={bottomPanel === "incidence" ? "default" : "outline"}
-                onClick={() => onTogglePanel("incidence")}
+                variant={
+                  matrixDialogKind === "incidence" ? "default" : "outline"
+                }
+                onClick={() => onToggleMatrixDialog("incidence")}
               >
                 <Table2Icon />
                 Inc

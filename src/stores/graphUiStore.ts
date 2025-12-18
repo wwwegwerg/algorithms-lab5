@@ -12,10 +12,10 @@ import type {
 import { useGraphDataStore } from "@/stores/graphDataStore";
 
 function clearGraphError() {
-  clearGraphError();
+  useGraphDataStore.getState().clearError();
 }
 
-export type BottomPanel = "none" | "adjacency" | "incidence";
+export type MatrixDialogKind = "none" | "adjacency" | "incidence";
 
 export type EdgeDraft = { sourceId: NodeId };
 
@@ -43,7 +43,7 @@ type GraphUiState = {
 
   newEdgeDirected: boolean;
 
-  bottomPanel: BottomPanel;
+  matrixDialogKind: MatrixDialogKind;
   matrixUnweightedSymbol: MatrixUnweightedSymbol;
 
   editTarget: EditTarget | null;
@@ -78,8 +78,8 @@ type GraphUiActions = {
   setHelpOpen: (open: boolean) => void;
   toggleHelpOpen: () => void;
 
-  setBottomPanel: (panel: BottomPanel) => void;
-  toggleBottomPanel: (panel: Exclude<BottomPanel, "none">) => void;
+  setMatrixDialogKind: (kind: MatrixDialogKind) => void;
+  toggleMatrixDialogKind: (kind: Exclude<MatrixDialogKind, "none">) => void;
   setMatrixUnweightedSymbol: (symbol: MatrixUnweightedSymbol) => void;
 
   addNodeAt: (x: number, y: number) => void;
@@ -159,7 +159,7 @@ const initialState: GraphUiState = {
 
   newEdgeDirected: false,
 
-  bottomPanel: "none",
+  matrixDialogKind: "none",
   matrixUnweightedSymbol: "-",
 
   editTarget: null,
@@ -362,15 +362,17 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     setHelpOpen: (open) => set({ helpOpen: open }),
     toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),
 
-    setBottomPanel: (panel) => {
+    setMatrixDialogKind: (kind) => {
       clearGraphError();
-      set({ bottomPanel: panel });
+      set({ matrixDialogKind: kind });
     },
 
-    toggleBottomPanel: (panel) =>
+    toggleMatrixDialogKind: (kind) =>
       set((s) => {
         clearGraphError();
-        return { bottomPanel: s.bottomPanel === panel ? "none" : panel };
+        return {
+          matrixDialogKind: s.matrixDialogKind === kind ? "none" : kind,
+        };
       }),
 
     setMatrixUnweightedSymbol: (symbol) =>

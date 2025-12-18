@@ -12,16 +12,16 @@ export function BottomToolbarContainer() {
     setMode,
     newEdgeDirected,
     setNewEdgeDirected,
-    bottomPanel,
-    toggleBottomPanel,
+    matrixDialogKind,
+    toggleMatrixDialogKind,
   } = useGraphUiStore(
     useShallow((s) => ({
       mode: s.interaction.mode,
       setMode: s.setMode,
       newEdgeDirected: s.newEdgeDirected,
       setNewEdgeDirected: s.setNewEdgeDirected,
-      bottomPanel: s.bottomPanel,
-      toggleBottomPanel: s.toggleBottomPanel,
+      matrixDialogKind: s.matrixDialogKind,
+      toggleMatrixDialogKind: s.toggleMatrixDialogKind,
     })),
   );
 
@@ -69,8 +69,8 @@ export function BottomToolbarContainer() {
       onChangeMode={setMode}
       newEdgeDirected={newEdgeDirected}
       onChangeNewEdgeDirected={setNewEdgeDirected}
-      bottomPanel={bottomPanel}
-      onTogglePanel={toggleBottomPanel}
+      matrixDialogKind={matrixDialogKind}
+      onToggleMatrixDialog={toggleMatrixDialogKind}
       onSaveJson={onSaveJson}
       onLoadJson={onLoadJson}
       onClearPersistedGraph={onClearPersistedGraph}
