@@ -9,11 +9,14 @@ import {
   type BoxSelect,
 } from "@/components/editor/canvas/geometry";
 import type {
+  EdgeId,
+  EditorMode,
   GraphEdge,
   GraphNode,
   NodeId,
   Selection,
 } from "@/core/graph/types";
+import { isEditableTarget } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 
 export type CanvasCameraState = {
@@ -31,7 +34,7 @@ export type GraphCanvasProps = {
   edges: readonly GraphEdge[];
 
   selection: Selection;
-  mode: "select" | "add_node" | "add_edge" | "delete";
+  mode: EditorMode;
 
   edgeDraftSourceId: NodeId | null;
 
@@ -43,11 +46,11 @@ export type GraphCanvasProps = {
   ) => void;
   onNodeClick: (id: NodeId, additive: boolean) => void;
   onNodeDoubleClick: (id: NodeId) => void;
-  onEdgeClick: (id: string, additive: boolean) => void;
-  onEdgeDoubleClick: (id: string) => void;
+  onEdgeClick: (id: EdgeId, additive: boolean) => void;
+  onEdgeDoubleClick: (id: EdgeId) => void;
   onBoxSelect: (
     nodeIds: NodeId[],
-    edgeIds: string[],
+    edgeIds: EdgeId[],
     additive: boolean,
   ) => void;
 
@@ -77,15 +80,6 @@ const ZOOM_MAX = 60;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function isEditableTarget(target: EventTarget | null) {
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement ||
-    (target instanceof HTMLElement && target.isContentEditable)
-  );
 }
 
 export function GraphCanvas({
@@ -147,8 +141,8 @@ export function GraphCanvas({
   }, [edges]);
 
   const edgeGeometry = React.useMemo(() => {
-    const dById = new Map<string, string | null>();
-    const labelPointById = new Map<string, { x: number; y: number } | null>();
+    const dById = new Map<EdgeId, string | null>();
+    const labelPointById = new Map<EdgeId, { x: number; y: number } | null>();
 
     for (const edge of edges) {
       const hasOppositeDirected =
@@ -294,7 +288,7 @@ export function GraphCanvas({
   }, []);
 
   const handleEdgePointerDown = React.useCallback(
-    (id: string, e: React.PointerEvent<SVGPathElement>) => {
+    (id: EdgeId, e: React.PointerEvent<SVGPathElement>) => {
       // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
       // Pan shortcuts: middle drag OR Space + left drag.
       if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
@@ -311,7 +305,7 @@ export function GraphCanvas({
   );
 
   const handleEdgeDoubleClick = React.useCallback(
-    (id: string, e: React.MouseEvent<SVGPathElement>) => {
+    (id: EdgeId, e: React.MouseEvent<SVGPathElement>) => {
       e.stopPropagation();
       onEdgeDoubleClick(id);
     },
@@ -688,7 +682,7 @@ export function GraphCanvas({
         pointerEvents="none"
       />
 
-      <g className={cn((spacePressed || panning) && "pointer-events-none")}>
+      <g className={cn({ "pointer-events-none": spacePressed || panning })}>
         {boxRect && (
           <rect
             x={boxRect.x}

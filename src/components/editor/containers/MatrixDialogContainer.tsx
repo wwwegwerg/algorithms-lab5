@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useShallow } from "zustand/shallow";
 import { MatrixDialog } from "@/components/editor/MatrixDialog";
 import { useGraphDataStore } from "@/stores/graphDataStore";
@@ -22,6 +23,10 @@ export function MatrixDialogContainer() {
     })),
   );
 
+  const onClose = React.useCallback(() => {
+    setBottomPanel("none");
+  }, [setBottomPanel]);
+
   return (
     <MatrixDialog
       open={bottomPanel !== "none"}
@@ -30,7 +35,7 @@ export function MatrixDialogContainer() {
       edges={edges}
       unweightedSymbol={matrixUnweightedSymbol}
       onChangeUnweightedSymbol={setMatrixUnweightedSymbol}
-      onClose={() => setBottomPanel("none")}
+      onClose={onClose}
     />
   );
 }

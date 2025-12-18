@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useShallow } from "zustand/shallow";
 import { OverlayDock } from "@/components/editor/OverlayDock";
 import { useGraphDataStore } from "@/stores/graphDataStore";
@@ -8,23 +9,35 @@ export function OverlayDockContainer() {
     useShallow((s) => ({ nodes: s.nodes, edges: s.edges })),
   );
 
-  const { mode, selection, canvasCamera } = useGraphUiStore(
+  const {
+    mode,
+    selection,
+    canvasCamera,
+    infoOpen,
+    helpOpen,
+    toggleInfoOpen,
+    toggleHelpOpen,
+  } = useGraphUiStore(
     useShallow((s) => ({
       mode: s.interaction.mode,
       selection: s.interaction.selection,
       canvasCamera: s.canvasCamera,
+      infoOpen: s.infoOpen,
+      helpOpen: s.helpOpen,
+      toggleInfoOpen: s.toggleInfoOpen,
+      toggleHelpOpen: s.toggleHelpOpen,
     })),
   );
 
-  const selectedNode =
-    selection.focus?.kind === "node"
-      ? (nodes.find((n) => n.id === selection.focus?.id) ?? null)
-      : null;
+  const selectedNode = React.useMemo(() => {
+    if (selection.focus?.kind !== "node") return null;
+    return nodes.find((n) => n.id === selection.focus?.id) ?? null;
+  }, [nodes, selection.focus?.id, selection.focus?.kind]);
 
-  const selectedEdge =
-    selection.focus?.kind === "edge"
-      ? (edges.find((e) => e.id === selection.focus?.id) ?? null)
-      : null;
+  const selectedEdge = React.useMemo(() => {
+    if (selection.focus?.kind !== "edge") return null;
+    return edges.find((e) => e.id === selection.focus?.id) ?? null;
+  }, [edges, selection.focus?.id, selection.focus?.kind]);
 
   return (
     <OverlayDock
@@ -35,6 +48,10 @@ export function OverlayDockContainer() {
       nodesCount={nodes.length}
       edgesCount={edges.length}
       camera={canvasCamera}
+      infoOpen={infoOpen}
+      helpOpen={helpOpen}
+      onToggleInfoOpen={toggleInfoOpen}
+      onToggleHelpOpen={toggleHelpOpen}
     />
   );
 }

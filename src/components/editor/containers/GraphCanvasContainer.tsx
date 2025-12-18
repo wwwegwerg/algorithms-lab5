@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useShallow } from "zustand/shallow";
 import { GraphCanvas } from "@/components/editor/GraphCanvas";
+import type { EdgeId, NodeId } from "@/core/graph/types";
+import { isEditableTarget } from "@/lib/dom";
 import { useGraphDataStore } from "@/stores/graphDataStore";
 import { useGraphUiStore } from "@/stores/graphUiStore";
 
@@ -59,20 +61,94 @@ export function GraphCanvasContainer() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Backspace" && e.key !== "Delete") return;
 
-      const target = e.target;
-      const isEditable =
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        (target instanceof HTMLElement && target.isContentEditable);
-
-      if (isEditable) return;
+      if (isEditableTarget(e.target)) return;
       deleteSelection();
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [deleteSelection]);
+
+  React.useEffect(() => {
+    if (infoOpen) return;
+    setCanvasCamera(null);
+  }, [infoOpen, setCanvasCamera]);
+
+  const onBackgroundClick = React.useCallback(
+    (p: { x: number; y: number }, additive: boolean) => {
+      if (mode === "add_node") {
+        addNodeAt(p.x, p.y);
+        return;
+      }
+
+      if (mode === "select") {
+        if (!additive) clearSelection();
+        return;
+      }
+
+      if (mode === "add_edge") {
+        cancelEdgeDraft();
+      }
+    },
+    [addNodeAt, cancelEdgeDraft, clearSelection, mode],
+  );
+
+  const onNodeClick = React.useCallback(
+    (id: NodeId, additive: boolean) => {
+      if (mode === "delete") {
+        deleteNode(id);
+        return;
+      }
+
+      if (mode === "add_edge") {
+        if (!edgeDraftSourceId) {
+          startEdgeFrom(id);
+          return;
+        }
+
+        addEdgeTo(id);
+        return;
+      }
+
+      selectNode(id, additive);
+    },
+    [addEdgeTo, deleteNode, edgeDraftSourceId, mode, selectNode, startEdgeFrom],
+  );
+
+  const onEdgeClick = React.useCallback(
+    (id: EdgeId, additive: boolean) => {
+      if (mode === "delete") {
+        deleteEdge(id);
+        return;
+      }
+
+      selectEdge(id, additive);
+    },
+    [deleteEdge, mode, selectEdge],
+  );
+
+  const onNodeDrag = React.useCallback(
+    (id: NodeId, x: number, y: number) => {
+      updateNode(id, { x, y });
+    },
+    [updateNode],
+  );
+
+  const onNodeDoubleClick = React.useCallback(
+    (id: NodeId) => {
+      if (mode !== "select") return;
+      openEditNode(id);
+    },
+    [mode, openEditNode],
+  );
+
+  const onEdgeDoubleClick = React.useCallback(
+    (id: EdgeId) => {
+      if (mode !== "select") return;
+      openEditEdge(id);
+    },
+    [mode, openEditEdge],
+  );
 
   return (
     <GraphCanvas
@@ -81,67 +157,15 @@ export function GraphCanvasContainer() {
       selection={selection}
       mode={mode}
       edgeDraftSourceId={edgeDraftSourceId}
-      onCameraChange={
-        infoOpen
-          ? (camera) => {
-              setCanvasCamera(camera);
-            }
-          : undefined
-      }
-      onBackgroundClick={(p, additive) => {
-        if (mode === "add_node") {
-          addNodeAt(p.x, p.y);
-          return;
-        }
-
-        if (mode === "select") {
-          if (!additive) clearSelection();
-          return;
-        }
-
-        if (mode === "add_edge") {
-          cancelEdgeDraft();
-        }
-      }}
-      onNodeClick={(id, additive) => {
-        if (mode === "delete") {
-          deleteNode(id);
-          return;
-        }
-
-        if (mode === "add_edge") {
-          if (!edgeDraftSourceId) {
-            startEdgeFrom(id);
-            return;
-          }
-
-          addEdgeTo(id);
-          return;
-        }
-
-        selectNode(id, additive);
-      }}
-      onEdgeClick={(id, additive) => {
-        if (mode === "delete") {
-          deleteEdge(id);
-          return;
-        }
-
-        selectEdge(id, additive);
-      }}
-      onNodeDrag={(id, x, y) => {
-        updateNode(id, { x, y });
-      }}
-      onNodeDoubleClick={(id) => {
-        if (mode !== "select") return;
-        openEditNode(id);
-      }}
-      onEdgeDoubleClick={(id) => {
-        if (mode !== "select") return;
-        openEditEdge(id);
-      }}
+      onCameraChange={infoOpen ? setCanvasCamera : undefined}
+      onBackgroundClick={onBackgroundClick}
+      onNodeClick={onNodeClick}
+      onEdgeClick={onEdgeClick}
+      onNodeDrag={onNodeDrag}
+      onNodeDoubleClick={onNodeDoubleClick}
+      onEdgeDoubleClick={onEdgeDoubleClick}
       onBoxSelect={applyBoxSelection}
-      onCancelEdgeDraft={() => cancelEdgeDraft()}
+      onCancelEdgeDraft={cancelEdgeDraft}
     />
   );
 }

@@ -32,7 +32,6 @@ function NodeInner({
 
   return (
     <g
-      key={node.id}
       onPointerDown={(e) => onPointerDown(node.id, e)}
       onDoubleClick={
         onDoubleClick ? (e) => onDoubleClick(node.id, e) : undefined

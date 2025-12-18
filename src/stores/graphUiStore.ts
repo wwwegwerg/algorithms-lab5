@@ -11,6 +11,10 @@ import type {
 } from "@/core/graph/types";
 import { useGraphDataStore } from "@/stores/graphDataStore";
 
+function clearGraphError() {
+  clearGraphError();
+}
+
 export type BottomPanel = "none" | "adjacency" | "incidence";
 
 export type EdgeDraft = { sourceId: NodeId };
@@ -168,26 +172,26 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     ...initialState,
 
     resetUi: () => {
-      useGraphDataStore.getState().clearError();
+      clearGraphError();
       set({ ...initialState });
     },
 
     openEditNode: (id) =>
       set(() => {
-        useGraphDataStore.getState().clearError();
+        clearGraphError();
         return { editTarget: { kind: "node", id } };
       }),
 
     openEditEdge: (id) =>
       set(() => {
-        useGraphDataStore.getState().clearError();
+        clearGraphError();
         return { editTarget: { kind: "edge", id } };
       }),
 
     closeEditDialog: () => set({ editTarget: null }),
 
     resetInteraction: () => {
-      useGraphDataStore.getState().clearError();
+      clearGraphError();
       set((s) => ({
         ...s,
         interaction: {
@@ -201,7 +205,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
 
     setMode: (mode) =>
       set((s) => {
-        useGraphDataStore.getState().clearError();
+        clearGraphError();
 
         if (mode === s.interaction.mode) {
           return s;
@@ -220,7 +224,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
       }),
 
     clearSelection: () => {
-      useGraphDataStore.getState().clearError();
+      clearGraphError();
       set((s) => ({
         ...s,
         interaction: {
@@ -233,7 +237,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
 
     selectNode: (id, additive) =>
       set((s) => {
-        useGraphDataStore.getState().clearError();
+        clearGraphError();
 
         if (!additive) {
           return {
@@ -274,7 +278,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
 
     selectEdge: (id, additive) =>
       set((s) => {
-        useGraphDataStore.getState().clearError();
+        clearGraphError();
 
         if (!additive) {
           return {
@@ -315,7 +319,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
 
     applyBoxSelection: (nodeIds, edgeIds, additive) =>
       set((s) => {
-        useGraphDataStore.getState().clearError();
+        clearGraphError();
 
         const focus: SelectionItem | null =
           nodeIds.length > 0
@@ -359,13 +363,13 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),
 
     setBottomPanel: (panel) => {
-      useGraphDataStore.getState().clearError();
+      clearGraphError();
       set({ bottomPanel: panel });
     },
 
     toggleBottomPanel: (panel) =>
       set((s) => {
-        useGraphDataStore.getState().clearError();
+        clearGraphError();
         return { bottomPanel: s.bottomPanel === panel ? "none" : panel };
       }),
 
@@ -389,7 +393,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     },
 
     startEdgeFrom: (id) => {
-      useGraphDataStore.getState().clearError();
+      clearGraphError();
       set((s) => ({
         ...s,
         interaction: {
@@ -401,7 +405,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     },
 
     cancelEdgeDraft: () => {
-      useGraphDataStore.getState().clearError();
+      clearGraphError();
       set((s) => ({
         ...s,
         interaction: { ...s.interaction, edgeDraft: null },

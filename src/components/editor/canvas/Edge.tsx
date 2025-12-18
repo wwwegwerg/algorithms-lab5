@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { GraphEdge } from "@/core/graph/types";
+import type { EdgeId, GraphEdge } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
 export type Point = { x: number; y: number };
@@ -14,10 +14,10 @@ export type EdgeProps =
       enableHoverOutline?: boolean;
       hoverTone?: "primary" | "destructive";
       onPointerDown: (
-        id: string,
+        id: EdgeId,
         e: React.PointerEvent<SVGPathElement>,
       ) => void;
-      onDoubleClick?: (id: string, e: React.MouseEvent<SVGPathElement>) => void;
+      onDoubleClick?: (id: EdgeId, e: React.MouseEvent<SVGPathElement>) => void;
     }
   | {
       variant: "draft";
