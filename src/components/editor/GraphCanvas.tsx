@@ -71,8 +71,9 @@ type PanState = {
   startY: number;
 };
 
-const ZOOM_MIN = 0.25;
-const ZOOM_MAX = 6;
+const DEFAULT_SCALE = 1.2;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 60;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -106,7 +107,7 @@ export function GraphCanvas({
 }: GraphCanvasProps) {
   const ref = React.useRef<SVGSVGElement | null>(null);
 
-  const cameraRef = React.useRef<Camera>({ x: 0, y: 0, scale: 1 });
+  const cameraRef = React.useRef<Camera>({ x: 0, y: 0, scale: DEFAULT_SCALE });
   const cameraInitializedRef = React.useRef(false);
 
   const pendingCameraRef = React.useRef<CanvasCameraState | null>(null);
@@ -151,7 +152,11 @@ export function GraphCanvas({
     if (w <= 0 || h <= 0) return;
 
     // Initial view: center world origin (0,0).
-    cameraRef.current = { x: -w / 2, y: -h / 2, scale: 1 };
+    cameraRef.current = {
+      x: -(w / DEFAULT_SCALE) / 2,
+      y: -(h / DEFAULT_SCALE) / 2,
+      scale: DEFAULT_SCALE,
+    };
     cameraInitializedRef.current = true;
   }, []);
 
@@ -206,7 +211,7 @@ export function GraphCanvas({
   const resetView = React.useCallback(() => {
     const el = ref.current;
     if (!el) {
-      cameraRef.current = { x: 0, y: 0, scale: 1 };
+      cameraRef.current = { x: 0, y: 0, scale: DEFAULT_SCALE };
       cameraInitializedRef.current = false;
       return;
     }
@@ -215,9 +220,9 @@ export function GraphCanvas({
     const h = el.clientHeight;
 
     cameraRef.current = {
-      x: -w / 2,
-      y: -h / 2,
-      scale: 1,
+      x: -(w / DEFAULT_SCALE) / 2,
+      y: -(h / DEFAULT_SCALE) / 2,
+      scale: DEFAULT_SCALE,
     };
     cameraInitializedRef.current = true;
 
