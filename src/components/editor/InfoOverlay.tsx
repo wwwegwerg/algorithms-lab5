@@ -1,15 +1,18 @@
 import type * as React from "react";
 import { Separator } from "@/components/ui/separator";
+import type { OverlayState } from "@/core/algorithms/types";
 import type {
   EditorMode,
   GraphEdge,
   GraphNode,
   Selection,
 } from "@/core/graph/types";
-import type { CanvasCamera } from "@/stores/graphUiStore";
+import type { ActiveToolbar, CanvasCamera } from "@/stores/graphUiStore";
 
 export type InfoOverlayProps = {
   isOpen: boolean;
+  activeToolbar: ActiveToolbar;
+  algorithmOverlay: OverlayState | null;
   selection: Selection;
   node: GraphNode | null;
   edge: GraphEdge | null;
@@ -59,6 +62,8 @@ function fmt(n: number) {
 
 export function InfoOverlay({
   isOpen,
+  activeToolbar,
+  algorithmOverlay,
   selection,
   node,
   edge,
@@ -69,8 +74,17 @@ export function InfoOverlay({
 }: InfoOverlayProps) {
   if (!isOpen) return null;
 
+  const overlay =
+    algorithmOverlay ??
+    ({
+      activeNodeIds: [],
+      visitedNodeIds: [],
+      frontierNodeIds: [],
+      activeEdgeId: undefined,
+    } satisfies OverlayState);
+
   return (
-    <div className="pointer-events-auto w-90 rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
+    <div className="w-90 rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
       <div className="space-y-3">
         <Section title="Graph">
           <Field label="mode" value={mode} />
@@ -91,7 +105,7 @@ export function InfoOverlay({
           </>
         )}
 
-        {mode === "select" && (
+        {mode === "select" && activeToolbar === "graph" && (
           <>
             <Separator className="bg-white/10" />
             <Section title="Selection">
@@ -116,6 +130,42 @@ export function InfoOverlay({
                       ? `multi (drag selected moves ${selection.nodeIds.length})`
                       : "single"
                 }
+              />
+            </Section>
+          </>
+        )}
+
+        {activeToolbar === "algorithms" && (
+          <>
+            <Separator className="bg-white/10" />
+            <Section title="Algorithm">
+              <Field
+                label="activeNodeIds"
+                value={
+                  overlay.activeNodeIds.length === 0
+                    ? "(none)"
+                    : overlay.activeNodeIds.join(", ")
+                }
+              />
+              <Field
+                label="visitedNodeIds"
+                value={
+                  overlay.visitedNodeIds.length === 0
+                    ? "(none)"
+                    : overlay.visitedNodeIds.join(", ")
+                }
+              />
+              <Field
+                label="frontierNodeIds"
+                value={
+                  overlay.frontierNodeIds.length === 0
+                    ? "(none)"
+                    : overlay.frontierNodeIds.join(", ")
+                }
+              />
+              <Field
+                label="activeEdgeId"
+                value={overlay.activeEdgeId ?? "(none)"}
               />
             </Section>
           </>

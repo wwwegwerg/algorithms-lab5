@@ -2,15 +2,19 @@ import { Bug, KeyboardIcon } from "lucide-react";
 import { HelpOverlay } from "@/components/editor/HelpOverlay";
 import { InfoOverlay } from "@/components/editor/InfoOverlay";
 import { Button } from "@/components/ui/button";
+import type { OverlayState } from "@/core/algorithms/types";
 import type {
   EditorMode,
   GraphEdge,
   GraphNode,
   Selection,
 } from "@/core/graph/types";
-import type { CanvasCamera } from "@/stores/graphUiStore";
+import type { ActiveToolbar, CanvasCamera } from "@/stores/graphUiStore";
 
 export type OverlayDockProps = {
+  activeToolbar: ActiveToolbar;
+  algorithmOverlay: OverlayState | null;
+
   mode: EditorMode;
   selection: Selection;
   selectedNode: GraphNode | null;
@@ -26,6 +30,8 @@ export type OverlayDockProps = {
 };
 
 export function OverlayDock({
+  activeToolbar,
+  algorithmOverlay,
   mode,
   selection,
   selectedNode,
@@ -44,6 +50,8 @@ export function OverlayDock({
         <HelpOverlay isOpen={isHelpOpen} />
         <InfoOverlay
           isOpen={isInfoOpen}
+          activeToolbar={activeToolbar}
+          algorithmOverlay={algorithmOverlay}
           selection={selection}
           node={selectedNode}
           edge={selectedEdge}

@@ -13,6 +13,7 @@ export function AlgorithmRunner() {
     stepsLength,
     nextStep,
     setPlaying,
+    setSteps,
   } = useAlgorithmStore(
     useShallow((s) => ({
       isPlaying: s.isPlaying,
@@ -21,15 +22,20 @@ export function AlgorithmRunner() {
       stepsLength: s.steps.length,
       nextStep: s.nextStep,
       setPlaying: s.setPlaying,
+      setSteps: s.setSteps,
     })),
   );
 
   React.useEffect(() => {
-    if (activeToolbar !== "algorithms") {
-      if (isPlaying) setPlaying(false);
+    if (activeToolbar === "algorithms") return;
+
+    if (stepsLength !== 0) {
+      setSteps([]);
       return;
     }
-  }, [activeToolbar, isPlaying, setPlaying]);
+
+    if (isPlaying) setPlaying(false);
+  }, [activeToolbar, isPlaying, setPlaying, setSteps, stepsLength]);
 
   React.useEffect(() => {
     if (activeToolbar !== "algorithms") return;

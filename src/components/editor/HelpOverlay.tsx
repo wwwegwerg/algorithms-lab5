@@ -53,7 +53,7 @@ export function HelpOverlay({ isOpen }: HelpOverlayProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="pointer-events-auto w-90 rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
+    <div className="w-90 rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
       <div className="space-y-3">
         <Section title="Modes">
           <Field label={<Kbd>select</Kbd>} value="выделение/перетаскивание" />
