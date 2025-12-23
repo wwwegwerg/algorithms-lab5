@@ -200,8 +200,8 @@ export function MatrixDialog({
 
             <TabsContent value="adjacency" className="flex-none">
               <DialogDescription>
-                Нет дуги = "∞". Диагональ (если петли нет) = "0"/"∞". Дуга без
-                веса = "-"/"1". Дуга с весом = weight.
+                Нет ребра = "∞". Диагональ (если петли нет) = "0"/"∞". Ребро без
+                веса = "-"/"1". Ребро с весом = weight.
               </DialogDescription>
             </TabsContent>
 

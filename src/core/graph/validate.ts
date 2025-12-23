@@ -69,7 +69,7 @@ export function validateEdgeDraft(
     if (isDirectedExists) {
       return {
         ok: false,
-        message: "Нельзя добавить ребро: между вершинами уже есть дуга",
+        message: "Нельзя добавить ребро: между вершинами уже есть ребро",
       };
     }
 
@@ -81,7 +81,7 @@ export function validateEdgeDraft(
     return {
       ok: false,
       message:
-        "Нельзя добавить дугу: уже есть неориентированное ребро между вершинами",
+        "Нельзя добавить ребро: уже есть неориентированное ребро между вершинами",
     };
   }
 
@@ -93,7 +93,7 @@ export function validateEdgeDraft(
       e.target === draft.target,
   );
   if (isSameDirectionExists) {
-    return { ok: false, message: "Такая дуга уже существует" };
+    return { ok: false, message: "Такое ребро уже существует" };
   }
 
   return { ok: true };
