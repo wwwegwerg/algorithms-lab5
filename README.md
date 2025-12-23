@@ -1,3 +1,8 @@
-# React + TypeScript + Vite + shadcn/ui
+# Запуск
 
-This is a template for a new Vite project with React, TypeScript, and shadcn/ui.
+Для запуска проекта необходимо установить node v24.7
+
+```
+npm i
+npm run dev
+```
