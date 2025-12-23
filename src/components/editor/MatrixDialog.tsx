@@ -76,6 +76,23 @@ export function MatrixDialog({
     [onChangeTab],
   );
 
+  const [isContentMounted, setIsContentMounted] = React.useState(isOpen);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsContentMounted(true);
+    }
+  }, [isOpen]);
+
+  const handleExited = React.useCallback(
+    (e: React.AnimationEvent | React.TransitionEvent) => {
+      if (e.currentTarget !== e.target) return;
+      if (isOpen) return;
+      setIsContentMounted(false);
+    },
+    [isOpen],
+  );
+
   return (
     <Dialog
       open={isOpen}
@@ -84,8 +101,12 @@ export function MatrixDialog({
         onClose();
       }}
     >
-      {isOpen && (
-        <DialogContent className="sm:max-w-160 md:max-w-3xl lg:max-w-5xl">
+      {isContentMounted && (
+        <DialogContent
+          className="sm:max-w-160 md:max-w-3xl lg:max-w-5xl"
+          onAnimationEnd={handleExited}
+          onTransitionEnd={handleExited}
+        >
           <Tabs value={tab} onValueChange={onValueChange} className="min-w-0">
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-10 md:flex-row md:items-start md:justify-between">

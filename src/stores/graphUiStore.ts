@@ -56,6 +56,7 @@ type GraphUiState = {
 
   activeToolbar: ActiveToolbar;
 
+  isEditDialogOpen: boolean;
   editTarget: EditTarget | null;
 
   canvasCamera: CanvasCamera | null;
@@ -71,6 +72,8 @@ type GraphUiActions = {
   openEditNode: (id: NodeId) => void;
   openEditEdge: (id: EdgeId) => void;
   closeEditDialog: () => void;
+  dismissEditDialog: () => void;
+  finalizeCloseEditDialog: (targetKey: string | null) => void;
 
   setMode: (mode: EditorMode) => void;
 
@@ -186,6 +189,7 @@ const initialState: GraphUiState = {
 
   activeToolbar: "graph",
 
+  isEditDialogOpen: false,
   editTarget: null,
 
   canvasCamera: null,
@@ -206,16 +210,33 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     openEditNode: (id) =>
       set(() => {
         clearGraphError();
-        return { editTarget: { kind: "node", id } };
+        return { isEditDialogOpen: true, editTarget: { kind: "node", id } };
       }),
 
     openEditEdge: (id) =>
       set(() => {
         clearGraphError();
-        return { editTarget: { kind: "edge", id } };
+        return { isEditDialogOpen: true, editTarget: { kind: "edge", id } };
       }),
 
-    closeEditDialog: () => set({ editTarget: null }),
+    closeEditDialog: () => set({ isEditDialogOpen: false }),
+
+    dismissEditDialog: () => set({ isEditDialogOpen: false, editTarget: null }),
+
+    finalizeCloseEditDialog: (targetKey) =>
+      set((s) => {
+        if (s.isEditDialogOpen) return {};
+
+        const currentKey = s.editTarget
+          ? `${s.editTarget.kind}:${s.editTarget.id}`
+          : null;
+
+        if (targetKey && currentKey !== targetKey) {
+          return {};
+        }
+
+        return { editTarget: null };
+      }),
 
     resetInteraction: () => {
       clearGraphError();
@@ -246,6 +267,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
             selection: emptySelection,
             edgeDraft: null,
           },
+          isEditDialogOpen: false,
           editTarget: null,
         };
       }),

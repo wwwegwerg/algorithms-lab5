@@ -34,7 +34,7 @@ function Field({
       <div className="shrink-0 font-mono text-[11px] leading-relaxed text-white/90">
         {label}
       </div>
-      <div className="min-w-0 flex-1 text-right text-[11px] leading-relaxed break-words whitespace-normal text-white/70">
+      <div className="min-w-0 flex-1 text-right text-[11px] leading-relaxed wrap-break-word whitespace-normal text-white/70">
         {value}
       </div>
     </div>

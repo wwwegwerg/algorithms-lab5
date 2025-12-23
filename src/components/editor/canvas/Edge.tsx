@@ -89,9 +89,11 @@ function EdgeInner(props: EdgeProps) {
         <path
           d={d}
           className={cn(
-            "fill-none opacity-0 transition-opacity group-hover:opacity-100",
-            isHighlighted && "opacity-100",
-            mode === "delete" ? "stroke-destructive/35" : "stroke-primary/35",
+            "fill-none stroke-transparent transition-colors",
+            isHighlighted && "stroke-primary/35",
+            mode === "delete"
+              ? "group-hover:stroke-destructive/35"
+              : "group-hover:stroke-primary/35",
           )}
           strokeWidth={7}
           markerEnd={edge.isDirected ? "url(#arrow-context-hover)" : undefined}

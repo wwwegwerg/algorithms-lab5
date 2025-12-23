@@ -9,6 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Field,
+  FieldContent,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useGraphDataStore } from "@/stores/graphDataStore";
@@ -37,11 +44,21 @@ function parseWeight(value: string): number | undefined | null {
 type EditKind = "node" | "edge" | null;
 
 export function EditObjectDialog() {
-  const { activeToolbar, editTarget, closeEditDialog } = useGraphUiStore(
+  const {
+    activeToolbar,
+    isEditDialogOpen,
+    editTarget,
+    closeEditDialog,
+    dismissEditDialog,
+    finalizeCloseEditDialog,
+  } = useGraphUiStore(
     useShallow((s) => ({
       activeToolbar: s.activeToolbar,
+      isEditDialogOpen: s.isEditDialogOpen,
       editTarget: s.editTarget,
       closeEditDialog: s.closeEditDialog,
+      dismissEditDialog: s.dismissEditDialog,
+      finalizeCloseEditDialog: s.finalizeCloseEditDialog,
     })),
   );
 
@@ -54,16 +71,18 @@ export function EditObjectDialog() {
     })),
   );
 
-  const isOpen = editTarget !== null;
+  const isOpen = isEditDialogOpen;
 
   React.useEffect(() => {
     if (activeToolbar !== "algorithms") return;
     if (!isOpen) return;
-    closeEditDialog();
-  }, [activeToolbar, closeEditDialog, isOpen]);
+    dismissEditDialog();
+  }, [activeToolbar, dismissEditDialog, isOpen]);
 
   const [nodeLabel, setNodeLabel] = React.useState("");
   const [edgeWeight, setEdgeWeight] = React.useState("");
+  const [nodeLabelTouched, setNodeLabelTouched] = React.useState(false);
+  const [edgeWeightTouched, setEdgeWeightTouched] = React.useState(false);
 
   const kind: EditKind = editTarget?.kind ?? null;
 
@@ -78,10 +97,32 @@ export function EditObjectDialog() {
       : null;
 
   const lastTargetKeyRef = React.useRef<string | null>(null);
+  const closingTargetKeyRef = React.useRef<string | null>(null);
+
+  const requestClose = React.useCallback(() => {
+    closingTargetKeyRef.current = editTarget
+      ? `${editTarget.kind}:${editTarget.id}`
+      : null;
+    closeEditDialog();
+  }, [closeEditDialog, editTarget]);
+
+  const finalizeClose = React.useCallback(
+    (e: React.AnimationEvent | React.TransitionEvent) => {
+      if (e.currentTarget !== e.target) return;
+      if (isOpen) return;
+      if (!closingTargetKeyRef.current) return;
+
+      finalizeCloseEditDialog(closingTargetKeyRef.current);
+      closingTargetKeyRef.current = null;
+    },
+    [finalizeCloseEditDialog, isOpen],
+  );
 
   React.useEffect(() => {
     if (!isOpen || !editTarget) {
       lastTargetKeyRef.current = null;
+      setNodeLabelTouched(false);
+      setEdgeWeightTouched(false);
       return;
     }
     const key = `${editTarget.kind}:${editTarget.id}`;
@@ -89,28 +130,30 @@ export function EditObjectDialog() {
       lastTargetKeyRef.current = key;
       if (editTarget.kind === "node") {
         if (!node) {
-          closeEditDialog();
+          dismissEditDialog();
           return;
         }
         setNodeLabel(node.label ?? "");
+        setNodeLabelTouched(false);
         return;
       }
       if (editTarget.kind === "edge") {
         if (!edge) {
-          closeEditDialog();
+          dismissEditDialog();
           return;
         }
         setEdgeWeight(edge.weight === undefined ? "" : String(edge.weight));
+        setEdgeWeightTouched(false);
       }
       return;
     }
     if (editTarget.kind === "node" && !node) {
-      closeEditDialog();
+      dismissEditDialog();
     }
     if (editTarget.kind === "edge" && !edge) {
-      closeEditDialog();
+      dismissEditDialog();
     }
-  }, [closeEditDialog, editTarget, edge, node, isOpen]);
+  }, [dismissEditDialog, editTarget, edge, node, isOpen]);
 
   const title =
     kind === "node"
@@ -134,16 +177,20 @@ export function EditObjectDialog() {
         : false;
 
   if (activeToolbar === "algorithms") return null;
+  if (!isOpen && !editTarget) return null;
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(nextOpen) => {
         if (nextOpen) return;
-        closeEditDialog();
+        requestClose();
       }}
     >
-      <DialogContent>
+      <DialogContent
+        onAnimationEnd={finalizeClose}
+        onTransitionEnd={finalizeClose}
+      >
         <form
           noValidate
           onSubmit={(e) => {
@@ -154,7 +201,7 @@ export function EditObjectDialog() {
               if (next.length === 0) return;
 
               updateNode(node.id, { label: next });
-              closeEditDialog();
+              requestClose();
               return;
             }
 
@@ -163,7 +210,7 @@ export function EditObjectDialog() {
               if (next === null) return;
 
               updateEdge(edge.id, { weight: next });
-              closeEditDialog();
+              requestClose();
             }
           }}
         >
@@ -173,48 +220,60 @@ export function EditObjectDialog() {
           </DialogHeader>
 
           {kind === "node" && node && (
-            <div className="mt-4 space-y-2">
-              <label htmlFor="node-label-input" className="text-sm font-medium">
-                Label
-              </label>
-              <Input
-                id="node-label-input"
-                value={nodeLabel}
-                aria-invalid={nodeLabel.trim().length === 0}
-                onChange={(e) => setNodeLabel(e.target.value)}
-                autoFocus
-              />
-            </div>
+            <FieldGroup className="mt-4">
+              <Field data-invalid={nodeLabel.trim().length === 0}>
+                <FieldLabel htmlFor="node-label-input">Label</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="node-label-input"
+                    value={nodeLabel}
+                    aria-invalid={nodeLabel.trim().length === 0}
+                    onChange={(e) => {
+                      setNodeLabelTouched(true);
+                      setNodeLabel(e.target.value);
+                    }}
+                    onBlur={() => setNodeLabelTouched(true)}
+                    autoFocus
+                  />
+                  {nodeLabelTouched && nodeLabel.trim().length === 0 && (
+                    <FieldError>Введите название</FieldError>
+                  )}
+                </FieldContent>
+              </Field>
+            </FieldGroup>
           )}
 
           {kind === "edge" && edge && (
-            <div className="mt-4 space-y-2">
-              <label
-                htmlFor="edge-weight-input"
-                className="text-sm font-medium"
-              >
-                Weight
-              </label>
-              <Input
-                id="edge-weight-input"
-                value={edgeWeight}
-                inputMode="decimal"
-                placeholder="(empty = unweighted)"
-                aria-invalid={parseWeight(edgeWeight) === null}
-                onChange={(e) => {
-                  const next = normalizeMinus(e.target.value);
-                  if (!WEIGHT_ALLOWED_RE.test(next)) return;
-                  setEdgeWeight(next);
-                }}
-                autoFocus
-              />
-            </div>
+            <FieldGroup className="mt-4">
+              <Field data-invalid={parseWeight(edgeWeight) === null}>
+                <FieldLabel htmlFor="edge-weight-input">Weight</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="edge-weight-input"
+                    value={edgeWeight}
+                    inputMode="decimal"
+                    placeholder="(empty = unweighted)"
+                    aria-invalid={parseWeight(edgeWeight) === null}
+                    onChange={(e) => {
+                      const next = normalizeMinus(e.target.value);
+                      if (!WEIGHT_ALLOWED_RE.test(next)) return;
+                      setEdgeWeight(next);
+                    }}
+                    onBlur={() => setEdgeWeightTouched(true)}
+                    autoFocus
+                  />
+                  {edgeWeightTouched && parseWeight(edgeWeight) === null && (
+                    <FieldError>Введите число</FieldError>
+                  )}
+                </FieldContent>
+              </Field>
+            </FieldGroup>
           )}
 
           <DialogFooter className="mt-6">
             <Button
               variant="outline"
-              onClick={closeEditDialog}
+              onClick={requestClose}
               className="cursor-pointer"
             >
               Cancel
