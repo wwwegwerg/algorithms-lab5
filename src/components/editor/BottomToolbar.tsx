@@ -37,7 +37,7 @@ export type BottomToolbarProps = {
   onChangeNewEdgeDirected: (directed: boolean) => void;
 
   matrixDialogKind: "none" | "adjacency" | "incidence";
-  onToggleMatrixDialog: (kind: "adjacency" | "incidence") => void;
+  onToggleMatrixDialogOpen: () => void;
 
   onSaveJson: () => void;
   onLoadJson: (file: File) => void;
@@ -51,7 +51,7 @@ export function BottomToolbar({
   newEdgeDirected,
   onChangeNewEdgeDirected,
   matrixDialogKind,
-  onToggleMatrixDialog,
+  onToggleMatrixDialogOpen,
   onSaveJson,
   onLoadJson,
   onClearPersistedGraph,
@@ -204,29 +204,14 @@ export function BottomToolbar({
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
-                variant={
-                  matrixDialogKind === "adjacency" ? "default" : "outline"
-                }
-                onClick={() => onToggleMatrixDialog("adjacency")}
-                aria-label="Adjacency matrix"
-                aria-pressed={matrixDialogKind === "adjacency"}
-                aria-expanded={matrixDialogKind === "adjacency"}
+                variant={matrixDialogKind !== "none" ? "default" : "outline"}
+                onClick={onToggleMatrixDialogOpen}
+                aria-label="Matrices"
+                aria-pressed={matrixDialogKind !== "none"}
+                aria-expanded={matrixDialogKind !== "none"}
               >
                 <Table2Icon />
-                Adj
-              </Button>
-              <Button
-                size="sm"
-                variant={
-                  matrixDialogKind === "incidence" ? "default" : "outline"
-                }
-                onClick={() => onToggleMatrixDialog("incidence")}
-                aria-label="Incidence matrix"
-                aria-pressed={matrixDialogKind === "incidence"}
-                aria-expanded={matrixDialogKind === "incidence"}
-              >
-                <Table2Icon />
-                Inc
+                Matrices
               </Button>
             </div>
           </div>

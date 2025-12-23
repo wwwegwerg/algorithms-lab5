@@ -13,7 +13,7 @@ export function BottomToolbarContainer() {
     newEdgeDirected,
     setNewEdgeDirected,
     matrixDialogKind,
-    toggleMatrixDialogKind,
+    setMatrixDialogKind,
   } = useGraphUiStore(
     useShallow((s) => ({
       mode: s.interaction.mode,
@@ -21,7 +21,7 @@ export function BottomToolbarContainer() {
       newEdgeDirected: s.newEdgeDirected,
       setNewEdgeDirected: s.setNewEdgeDirected,
       matrixDialogKind: s.matrixDialogKind,
-      toggleMatrixDialogKind: s.toggleMatrixDialogKind,
+      setMatrixDialogKind: s.setMatrixDialogKind,
     })),
   );
 
@@ -63,6 +63,10 @@ export function BottomToolbarContainer() {
     useGraphUiStore.getState().resetUi();
   }, []);
 
+  const onToggleMatrixDialogOpen = React.useCallback(() => {
+    setMatrixDialogKind(matrixDialogKind === "none" ? "adjacency" : "none");
+  }, [matrixDialogKind, setMatrixDialogKind]);
+
   return (
     <BottomToolbar
       mode={mode}
@@ -70,7 +74,7 @@ export function BottomToolbarContainer() {
       newEdgeDirected={newEdgeDirected}
       onChangeNewEdgeDirected={setNewEdgeDirected}
       matrixDialogKind={matrixDialogKind}
-      onToggleMatrixDialog={toggleMatrixDialogKind}
+      onToggleMatrixDialogOpen={onToggleMatrixDialogOpen}
       onSaveJson={onSaveJson}
       onLoadJson={onLoadJson}
       onClearPersistedGraph={onClearPersistedGraph}
