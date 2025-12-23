@@ -59,6 +59,7 @@ export function BottomToolbarContainer() {
     setSteps,
     prevStep,
     nextStep,
+    goToLastStep,
     resetPlayback,
   } = useAlgorithmStore(
     useShallow((s) => ({
@@ -77,6 +78,7 @@ export function BottomToolbarContainer() {
       setSteps: s.setSteps,
       prevStep: s.prevStep,
       nextStep: s.nextStep,
+      goToLastStep: s.goToLastStep,
       resetPlayback: s.resetPlayback,
     })),
   );
@@ -148,6 +150,11 @@ export function BottomToolbarContainer() {
     if (isPlaying) setPlaying(false);
     resetPlayback();
   }, [isPlaying, resetPlayback, setPlaying]);
+
+  const onLastStep = React.useCallback(() => {
+    if (isPlaying) setPlaying(false);
+    goToLastStep();
+  }, [goToLastStep, isPlaying, setPlaying]);
 
   const onRunAlgorithm = React.useCallback(() => {
     const algorithm = getAlgorithm(algorithmId);
@@ -232,6 +239,7 @@ export function BottomToolbarContainer() {
         onPrevStep,
         onNextStep,
         onResetSteps,
+        onLastStep,
         onRunAlgorithm,
       }}
     />

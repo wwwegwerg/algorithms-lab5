@@ -1,9 +1,10 @@
 import * as React from "react";
 import {
   ArrowLeftFromLine,
+  FastForward,
   Pause,
   Play,
-  RotateCcw,
+  Rewind,
   SkipBack,
   SkipForward,
 } from "lucide-react";
@@ -49,6 +50,7 @@ export type AlgorithmToolbarProps = {
   onPrevStep: () => void;
   onNextStep: () => void;
   onResetSteps: () => void;
+  onLastStep: () => void;
   onRunAlgorithm: () => void;
 };
 
@@ -71,6 +73,7 @@ export function AlgorithmToolbar({
   onPrevStep,
   onNextStep,
   onResetSteps,
+  onLastStep,
   onRunAlgorithm,
 }: AlgorithmToolbarProps) {
   const selectedAlgorithmLabel =
@@ -115,6 +118,7 @@ export function AlgorithmToolbar({
         variant="outline"
         onClick={onShowGraphToolbar}
         aria-label="Switch to graph toolbar"
+        title="Switch to graph toolbar"
       >
         <ArrowLeftFromLine />
         Graph
@@ -198,7 +202,12 @@ export function AlgorithmToolbar({
           </Select>
         )}
 
-        <Button size="sm" variant="outline" onClick={onRunAlgorithm}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onRunAlgorithm}
+          title="Run algorithm"
+        >
           Run
         </Button>
       </div>
@@ -229,9 +238,21 @@ export function AlgorithmToolbar({
         <Button
           size="icon-sm"
           variant="outline"
+          onClick={onResetSteps}
+          disabled={stepsLength === 0}
+          aria-label="First step"
+          title="Go to first step"
+        >
+          <Rewind />
+        </Button>
+
+        <Button
+          size="icon-sm"
+          variant="outline"
           onClick={onPrevStep}
           disabled={stepsLength === 0 || stepIndex <= 0}
           aria-label="Previous step"
+          title="Previous step"
         >
           <SkipBack />
         </Button>
@@ -242,6 +263,7 @@ export function AlgorithmToolbar({
           onClick={onTogglePlaying}
           disabled={stepsLength === 0}
           aria-label={isPlaying ? "Pause" : "Play"}
+          title={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? <Pause /> : <Play />}
         </Button>
@@ -252,6 +274,7 @@ export function AlgorithmToolbar({
           onClick={onNextStep}
           disabled={stepsLength === 0 || stepIndex >= stepsLength - 1}
           aria-label="Next step"
+          title="Next step"
         >
           <SkipForward />
         </Button>
@@ -259,11 +282,12 @@ export function AlgorithmToolbar({
         <Button
           size="icon-sm"
           variant="outline"
-          onClick={onResetSteps}
-          disabled={stepsLength === 0}
-          aria-label="Reset"
+          onClick={onLastStep}
+          disabled={stepsLength === 0 || stepIndex >= stepsLength - 1}
+          aria-label="Last step"
+          title="Go to last step"
         >
-          <RotateCcw />
+          <FastForward />
         </Button>
 
         <div className="min-w-14 text-center font-mono text-xs text-muted-foreground">

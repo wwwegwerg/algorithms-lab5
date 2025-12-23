@@ -27,6 +27,7 @@ type AlgorithmActions = {
 
   nextStep: () => void;
   prevStep: () => void;
+  goToLastStep: () => void;
 
   setPlaying: (isPlaying: boolean) => void;
   setPlayIntervalMs: (ms: number) => void;
@@ -77,6 +78,8 @@ export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
         stepIndex: Math.min(s.stepIndex + 1, Math.max(0, s.steps.length - 1)),
       })),
     prevStep: () => set((s) => ({ stepIndex: Math.max(0, s.stepIndex - 1) })),
+    goToLastStep: () =>
+      set((s) => ({ stepIndex: Math.max(0, s.steps.length - 1) })),
 
     setPlaying: (isPlaying) => set({ isPlaying }),
     setPlayIntervalMs: (ms) => set({ playIntervalMs: ms }),
