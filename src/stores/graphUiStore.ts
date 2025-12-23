@@ -4,6 +4,7 @@ import type {
   EditorMode,
   GraphEdge,
   GraphNode,
+  MatrixDiagonalSymbol,
   MatrixUnweightedSymbol,
   NodeId,
   SelectionItem,
@@ -53,6 +54,7 @@ type GraphUiState = {
 
   matrixDialogKind: MatrixDialogKind;
   matrixUnweightedSymbol: MatrixUnweightedSymbol;
+  matrixDiagonalSymbol: MatrixDiagonalSymbol;
 
   activeToolbar: ActiveToolbar;
 
@@ -106,6 +108,7 @@ type GraphUiActions = {
   setMatrixDialogKind: (kind: MatrixDialogKind) => void;
   toggleMatrixDialogKind: (kind: Exclude<MatrixDialogKind, "none">) => void;
   setMatrixUnweightedSymbol: (symbol: MatrixUnweightedSymbol) => void;
+  setMatrixDiagonalSymbol: (symbol: MatrixDiagonalSymbol) => void;
 
   addNodeAt: (x: number, y: number) => void;
 
@@ -186,6 +189,7 @@ const initialState: GraphUiState = {
 
   matrixDialogKind: "none",
   matrixUnweightedSymbol: "-",
+  matrixDiagonalSymbol: "∞",
 
   activeToolbar: "graph",
 
@@ -449,6 +453,8 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
 
     setMatrixUnweightedSymbol: (symbol) =>
       set({ matrixUnweightedSymbol: symbol }),
+
+    setMatrixDiagonalSymbol: (symbol) => set({ matrixDiagonalSymbol: symbol }),
 
     addNodeAt: (x, y) => {
       const id = useGraphDataStore.getState().addNodeAt(x, y);

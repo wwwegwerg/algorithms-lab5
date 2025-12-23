@@ -1,6 +1,7 @@
 import type {
   GraphEdge,
   GraphNode,
+  MatrixDiagonalSymbol,
   MatrixUnweightedSymbol,
 } from "@/core/graph/types";
 import { isLoop } from "@/core/graph/types";
@@ -21,13 +22,18 @@ export function buildAdjacencyMatrix(
   nodes: readonly GraphNode[],
   edges: readonly GraphEdge[],
   unweightedSymbol: MatrixUnweightedSymbol,
+  diagonalSymbol: MatrixDiagonalSymbol,
 ): MatrixTable {
   const nodeLabels = nodes.map((n) => n.id);
   const indexById = new Map(nodes.map((n, i) => [n.id, i] as const));
 
-  const values = Array.from({ length: nodes.length }, () =>
-    Array.from({ length: nodes.length }, () => ""),
+  const values: string[][] = Array.from({ length: nodes.length }, () =>
+    Array.from({ length: nodes.length }, () => "∞"),
   );
+
+  for (let i = 0; i < nodes.length; i++) {
+    values[i]![i] = diagonalSymbol;
+  }
 
   for (const edge of edges) {
     const i = indexById.get(edge.source);

@@ -12,13 +12,18 @@ export function MatrixDialogContainer() {
   const {
     matrixDialogKind,
     matrixUnweightedSymbol,
+    matrixDiagonalSymbol,
     setMatrixUnweightedSymbol,
+    setMatrixDiagonalSymbol,
     setMatrixDialogKind,
   } = useGraphUiStore(
     useShallow((s) => ({
       matrixDialogKind: s.matrixDialogKind,
       matrixUnweightedSymbol: s.matrixUnweightedSymbol,
+      matrixDiagonalSymbol: s.matrixDiagonalSymbol,
       setMatrixUnweightedSymbol: s.setMatrixUnweightedSymbol,
+      setMatrixDiagonalSymbol: s.setMatrixDiagonalSymbol,
+
       setMatrixDialogKind: s.setMatrixDialogKind,
     })),
   );
@@ -45,6 +50,8 @@ export function MatrixDialogContainer() {
       edges={edges}
       unweightedSymbol={matrixUnweightedSymbol}
       onChangeUnweightedSymbol={setMatrixUnweightedSymbol}
+      diagonalSymbol={matrixDiagonalSymbol}
+      onChangeDiagonalSymbol={setMatrixDiagonalSymbol}
       onClose={onClose}
     />
   );

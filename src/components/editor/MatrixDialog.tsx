@@ -25,6 +25,7 @@ import {
 import type {
   GraphEdge,
   GraphNode,
+  MatrixDiagonalSymbol,
   MatrixUnweightedSymbol,
 } from "@/core/graph/types";
 import { downloadTextFile } from "@/core/io/download";
@@ -43,6 +44,9 @@ export type MatrixDialogProps = {
   unweightedSymbol: MatrixUnweightedSymbol;
   onChangeUnweightedSymbol: (symbol: MatrixUnweightedSymbol) => void;
 
+  diagonalSymbol: MatrixDiagonalSymbol;
+  onChangeDiagonalSymbol: (symbol: MatrixDiagonalSymbol) => void;
+
   onClose: () => void;
 };
 
@@ -54,11 +58,13 @@ export function MatrixDialog({
   edges,
   unweightedSymbol,
   onChangeUnweightedSymbol,
+  diagonalSymbol,
+  onChangeDiagonalSymbol,
   onClose,
 }: MatrixDialogProps) {
   const adjacencyTable = React.useMemo(() => {
-    return buildAdjacencyMatrix(nodes, edges, unweightedSymbol);
-  }, [edges, nodes, unweightedSymbol]);
+    return buildAdjacencyMatrix(nodes, edges, unweightedSymbol, diagonalSymbol);
+  }, [diagonalSymbol, edges, nodes, unweightedSymbol]);
 
   const incidenceTable = React.useMemo(() => {
     return buildIncidenceMatrix(nodes, edges);
@@ -121,26 +127,47 @@ export function MatrixDialog({
                 <div className="flex flex-wrap items-center gap-2">
                   {tab === "adjacency" && (
                     <div className="flex items-center gap-1">
-                      {(["-", "1", "∞"] as const).map((v) => (
-                        <Button
-                          key={v}
-                          size="sm"
-                          variant={
-                            unweightedSymbol === v ? "default" : "outline"
-                          }
-                          onClick={() => onChangeUnweightedSymbol(v)}
-                          aria-label={
-                            v === "-"
-                              ? "Unweighted edge symbol: dash"
-                              : v === "1"
-                                ? "Unweighted edge symbol: one"
-                                : "Unweighted edge symbol: infinity"
-                          }
-                          aria-pressed={unweightedSymbol === v}
-                        >
-                          {v}
-                        </Button>
-                      ))}
+                      <div className="flex items-center gap-1">
+                        {(["-", "1"] as const).map((v) => (
+                          <Button
+                            key={v}
+                            size="sm"
+                            variant={
+                              unweightedSymbol === v ? "default" : "outline"
+                            }
+                            onClick={() => onChangeUnweightedSymbol(v)}
+                            aria-label={
+                              v === "-"
+                                ? "Unweighted edge symbol: dash"
+                                : "Unweighted edge symbol: one"
+                            }
+                            aria-pressed={unweightedSymbol === v}
+                          >
+                            {v}
+                          </Button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {(["∞", "0"] as const).map((v) => (
+                          <Button
+                            key={v}
+                            size="sm"
+                            variant={
+                              diagonalSymbol === v ? "default" : "outline"
+                            }
+                            onClick={() => onChangeDiagonalSymbol(v)}
+                            aria-label={
+                              v === "∞"
+                                ? "Diagonal default: infinity"
+                                : "Diagonal default: zero"
+                            }
+                            aria-pressed={diagonalSymbol === v}
+                          >
+                            {v}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -173,7 +200,8 @@ export function MatrixDialog({
 
             <TabsContent value="adjacency" className="flex-none">
               <DialogDescription>
-                Ребра нет = пусто. Ребро есть (без веса) = "-"/"1"/"∞".
+                Нет дуги = "∞". Диагональ (если петли нет) = "0"/"∞". Дуга без
+                веса = "-"/"1". Дуга с весом = weight.
               </DialogDescription>
             </TabsContent>
 
