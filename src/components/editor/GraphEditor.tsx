@@ -1,4 +1,5 @@
 import { BottomToolbarContainer } from "@/components/editor/containers/BottomToolbarContainer";
+import { CameraDockContainer } from "@/components/editor/containers/CameraDockContainer";
 import { EditObjectDialog } from "@/components/editor/containers/EditObjectDialog";
 import { EditorToast } from "@/components/editor/containers/EditorToast";
 import { GraphCanvasContainer } from "@/components/editor/containers/GraphCanvasContainer";
@@ -12,6 +13,7 @@ export function GraphEditor() {
       <EditorToast />
       <MatrixDialogContainer />
       <OverlayDockContainer />
+      <CameraDockContainer />
       <BottomToolbarContainer />
       <EditObjectDialog />
     </div>

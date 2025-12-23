@@ -33,6 +33,12 @@ export type CanvasCamera = {
   viewHeight: number;
 };
 
+export type CameraCommand =
+  | { kind: "zoom_in" }
+  | { kind: "zoom_out" }
+  | { kind: "reset_zoom" }
+  | { kind: "go_to_origin" };
+
 type EditTarget = { kind: "node"; id: NodeId } | { kind: "edge"; id: EdgeId };
 
 type GraphUiState = {
@@ -49,6 +55,9 @@ type GraphUiState = {
   editTarget: EditTarget | null;
 
   canvasCamera: CanvasCamera | null;
+
+  cameraCommand: CameraCommand | null;
+  cameraCommandNonce: number;
 };
 
 type GraphUiActions = {
@@ -74,6 +83,12 @@ type GraphUiActions = {
   toggleInfoOpen: () => void;
 
   setCanvasCamera: (camera: CanvasCamera | null) => void;
+
+  requestCameraCommand: (command: CameraCommand) => void;
+  requestZoomIn: () => void;
+  requestZoomOut: () => void;
+  requestResetZoom: () => void;
+  requestGoToOrigin: () => void;
 
   setHelpOpen: (open: boolean) => void;
   toggleHelpOpen: () => void;
@@ -165,6 +180,9 @@ const initialState: GraphUiState = {
   editTarget: null,
 
   canvasCamera: null,
+
+  cameraCommand: null,
+  cameraCommandNonce: 0,
 };
 
 export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
@@ -358,6 +376,19 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
 
     setCanvasCamera: (camera) => set({ canvasCamera: camera }),
+
+    requestCameraCommand: (command) =>
+      set((s) => ({
+        ...s,
+        cameraCommand: command,
+        cameraCommandNonce: s.cameraCommandNonce + 1,
+      })),
+
+    requestZoomIn: () => get().requestCameraCommand({ kind: "zoom_in" }),
+    requestZoomOut: () => get().requestCameraCommand({ kind: "zoom_out" }),
+    requestResetZoom: () => get().requestCameraCommand({ kind: "reset_zoom" }),
+    requestGoToOrigin: () =>
+      get().requestCameraCommand({ kind: "go_to_origin" }),
 
     setHelpOpen: (open) => set({ helpOpen: open }),
     toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),

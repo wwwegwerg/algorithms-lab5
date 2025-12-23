@@ -18,6 +18,7 @@ import type {
 } from "@/core/graph/types";
 import { isEditableTarget } from "@/lib/dom";
 import { cn } from "@/lib/utils";
+import type { CameraCommand } from "@/stores/graphUiStore";
 
 export type CanvasCameraState = {
   x: number;
@@ -37,6 +38,8 @@ export type GraphCanvasProps = {
   mode: EditorMode;
 
   edgeDraftSourceId: NodeId | null;
+
+  cameraCommand?: { nonce: number; command: CameraCommand } | null;
 
   onCameraChange?: (camera: CanvasCameraState) => void;
 
@@ -93,6 +96,7 @@ export function GraphCanvas({
   selection,
   mode,
   edgeDraftSourceId,
+  cameraCommand,
   onCameraChange,
   onBackgroundClick,
   onNodeClick,
@@ -112,6 +116,8 @@ export function GraphCanvas({
   const pendingCameraRef = React.useRef<CanvasCameraState | null>(null);
   const sentCameraKeyRef = React.useRef<string | null>(null);
   const cameraRafRef = React.useRef<number | null>(null);
+
+  const lastCameraCommandNonceRef = React.useRef<number | null>(null);
 
   const gridLargeRef = React.useRef<SVGRectElement | null>(null);
   const gridSmallRef = React.useRef<SVGRectElement | null>(null);
@@ -434,6 +440,70 @@ export function GraphCanvas({
   React.useLayoutEffect(() => {
     applyViewBox();
   }, [applyViewBox]);
+
+  React.useEffect(() => {
+    if (!cameraCommand) return;
+
+    const { nonce, command } = cameraCommand;
+    if (lastCameraCommandNonceRef.current === nonce) return;
+
+    lastCameraCommandNonceRef.current = nonce;
+    pendingNodeDragRef.current = null;
+
+    setPanning(null);
+    setDragging(null);
+    setBoxSelect(null);
+
+    const el = ref.current;
+    if (!el) return;
+
+    ensureCameraInitialized(el);
+
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    if (w <= 0 || h <= 0) return;
+
+    const prev = cameraRef.current;
+
+    const viewWidth = w / prev.scale;
+    const viewHeight = h / prev.scale;
+    const centerX = prev.x + viewWidth / 2;
+    const centerY = prev.y + viewHeight / 2;
+
+    const ZOOM_FACTOR = 1.2;
+
+    if (command.kind === "go_to_origin") {
+      const originViewWidth = w / prev.scale;
+      const originViewHeight = h / prev.scale;
+
+      cameraRef.current = {
+        ...prev,
+        x: -originViewWidth / 2,
+        y: -originViewHeight / 2,
+      };
+
+      applyViewBox();
+      return;
+    }
+
+    const nextScale =
+      command.kind === "zoom_in"
+        ? clamp(prev.scale * ZOOM_FACTOR, ZOOM_MIN, ZOOM_MAX)
+        : command.kind === "zoom_out"
+          ? clamp(prev.scale / ZOOM_FACTOR, ZOOM_MIN, ZOOM_MAX)
+          : DEFAULT_SCALE;
+
+    const nextViewWidth = w / nextScale;
+    const nextViewHeight = h / nextScale;
+
+    cameraRef.current = {
+      x: centerX - nextViewWidth / 2,
+      y: centerY - nextViewHeight / 2,
+      scale: nextScale,
+    };
+
+    applyViewBox();
+  }, [applyViewBox, cameraCommand, ensureCameraInitialized]);
 
   React.useEffect(() => {
     if (!onCameraChange) return;
