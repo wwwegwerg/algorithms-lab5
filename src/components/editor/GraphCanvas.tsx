@@ -383,11 +383,6 @@ export function GraphCanvas({
         return;
       }
 
-      const el = ref.current;
-      if (el) {
-        el.setPointerCapture(e.pointerId);
-      }
-
       setBoxSelect(null);
       setDragging(null);
 
@@ -693,6 +688,8 @@ export function GraphCanvas({
           const distSq = dx * dx + dy * dy;
 
           if (distSq >= DRAG_THRESHOLD_SQ && p) {
+            e.currentTarget.setPointerCapture(pendingNodeDrag.pointerId);
+
             const startWorld = pendingNodeDrag.startWorld;
             const deltaX = p.x - startWorld.x;
             const deltaY = p.y - startWorld.y;
@@ -782,6 +779,11 @@ export function GraphCanvas({
         applyNodePositionUpdates(updates);
       }}
       onPointerUp={(e) => {
+        const el = ref.current;
+        if (el && el.hasPointerCapture(e.pointerId)) {
+          el.releasePointerCapture(e.pointerId);
+        }
+
         setPanning(null);
         setDragging(null);
 
@@ -820,13 +822,23 @@ export function GraphCanvas({
         onBoxSelect(nodeIds, edgeIds, boxSelect.additive);
         setBoxSelect(null);
       }}
-      onPointerLeave={() => {
+      onPointerLeave={(e) => {
+        const el = ref.current;
+        if (el && el.hasPointerCapture(e.pointerId)) {
+          el.releasePointerCapture(e.pointerId);
+        }
+
         pendingNodeDragRef.current = null;
         setPanning(null);
         setDragging(null);
         setBoxSelect(null);
       }}
-      onPointerCancel={() => {
+      onPointerCancel={(e) => {
+        const el = ref.current;
+        if (el && el.hasPointerCapture(e.pointerId)) {
+          el.releasePointerCapture(e.pointerId);
+        }
+
         pendingNodeDragRef.current = null;
         setPanning(null);
         setDragging(null);
