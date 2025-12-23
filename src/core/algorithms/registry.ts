@@ -5,14 +5,16 @@ import { maxFlowFordFulkersonAlgorithm } from "@/core/algorithms/maxFlowFordFulk
 import { mstPrimAlgorithm } from "@/core/algorithms/mstPrim";
 import type { GraphAlgorithm } from "@/core/algorithms/types";
 
-export const algorithms: GraphAlgorithm[] = [
+export const algorithms = [
   bfsAlgorithm,
   dfsAlgorithm,
   maxFlowFordFulkersonAlgorithm,
   mstPrimAlgorithm,
   dijkstraAlgorithm,
-];
+] as const satisfies readonly GraphAlgorithm[];
 
-export function getAlgorithm(id: string) {
+export type AlgorithmId = (typeof algorithms)[number]["id"];
+
+export function getAlgorithm(id: AlgorithmId) {
   return algorithms.find((a) => a.id === id) ?? null;
 }

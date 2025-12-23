@@ -22,16 +22,17 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import type { AlgorithmId } from "@/core/algorithms/registry";
 import type { GraphNode } from "@/core/graph/types";
 
-type AlgorithmOption = { id: string; label: string };
+type AlgorithmOption = { id: AlgorithmId; label: string };
 
 export type AlgorithmToolbarProps = {
   onShowGraphToolbar: () => void;
 
   algorithmOptions: AlgorithmOption[];
-  algorithmId: string;
-  onChangeAlgorithmId: (id: string) => void;
+  algorithmId: AlgorithmId;
+  onChangeAlgorithmId: (id: AlgorithmId) => void;
 
   nodes: readonly GraphNode[];
   sourceNodeId: string | null;
@@ -78,6 +79,10 @@ export function AlgorithmToolbar({
 }: AlgorithmToolbarProps) {
   const selectedAlgorithmLabel =
     algorithmOptions.find((opt) => opt.id === algorithmId)?.label ?? null;
+
+  const algorithmIdSet = React.useMemo(() => {
+    return new Set(algorithmOptions.map((opt) => opt.id));
+  }, [algorithmOptions]);
 
   const selectedSourceNode = sourceNodeId
     ? (nodes.find((n) => n.id === sourceNodeId) ?? null)
@@ -127,7 +132,8 @@ export function AlgorithmToolbar({
           value={algorithmId}
           onValueChange={(value) => {
             if (typeof value !== "string") return;
-            onChangeAlgorithmId(value);
+            if (!algorithmIdSet.has(value as AlgorithmId)) return;
+            onChangeAlgorithmId(value as AlgorithmId);
           }}
         >
           <SelectTrigger size="sm" aria-label="Algorithm">

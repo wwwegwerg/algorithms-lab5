@@ -4,6 +4,7 @@ import type { EdgeId, GraphEdge, GraphNode, NodeId } from "@/core/graph/types";
 import { isLoop } from "@/core/graph/types";
 import { validateEdgeDraft } from "@/core/graph/validate";
 import { loadGraphSnapshot } from "@/core/io/graphFile";
+import { createErrorState, nextErrorState } from "@/stores/errorState";
 
 const PERSIST_KEY = "graph-editor:graph";
 const graphStorage = createJSONStorage(() => localStorage);
@@ -92,8 +93,7 @@ function tryLoadPersistedGraph(persisted: unknown) {
 const initialState: GraphDataState = {
   nodes: [],
   edges: [],
-  lastError: null,
-  errorNonce: 0,
+  ...createErrorState(),
   nextNodeIndex: 1,
   nextEdgeIndex: 1,
 };
@@ -105,12 +105,7 @@ export const useGraphDataStore = create<GraphDataState & GraphDataActions>()(
 
       clearError: () => set({ lastError: null }),
 
-      setError: (message) =>
-        set((s) =>
-          message === null
-            ? { lastError: null }
-            : { lastError: message, errorNonce: s.errorNonce + 1 },
-        ),
+      setError: (message) => set((s) => nextErrorState(s, message)),
 
       addNodeAt: (x, y) => {
         const id = nextId("n", get().nextNodeIndex);

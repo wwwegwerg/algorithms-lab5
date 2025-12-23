@@ -10,7 +10,7 @@ function asWeight(edge: GraphEdge) {
   return edge.weight as number;
 }
 
-export const mstPrimAlgorithm: GraphAlgorithm = {
+export const mstPrimAlgorithm = {
   id: "MST_PRIM",
   label: "MST (Прим)",
   supports: ({ nodes, edges, sourceNodeId }) => {
@@ -158,4 +158,4 @@ export const mstPrimAlgorithm: GraphAlgorithm = {
 
     return steps;
   },
-};
+} satisfies GraphAlgorithm;

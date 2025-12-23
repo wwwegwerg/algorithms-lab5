@@ -1,8 +1,10 @@
 import { create } from "zustand";
+import type { AlgorithmId } from "@/core/algorithms/registry";
 import type { OverlayState } from "@/core/algorithms/types";
+import { createErrorState, nextErrorState } from "@/stores/errorState";
 
 type AlgorithmState = {
-  algorithmId: string;
+  algorithmId: AlgorithmId;
   sourceNodeId: string | null;
   sinkNodeId: string | null;
 
@@ -17,7 +19,7 @@ type AlgorithmState = {
 };
 
 type AlgorithmActions = {
-  setAlgorithmId: (id: string) => void;
+  setAlgorithmId: (id: AlgorithmId) => void;
   setSourceNodeId: (id: string | null) => void;
   setSinkNodeId: (id: string | null) => void;
 
@@ -46,8 +48,7 @@ const initialState: AlgorithmState = {
   isPlaying: false,
   playIntervalMs: 600,
 
-  lastError: null,
-  errorNonce: 0,
+  ...createErrorState(),
 };
 
 export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
@@ -84,12 +85,7 @@ export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
     setPlaying: (isPlaying) => set({ isPlaying }),
     setPlayIntervalMs: (ms) => set({ playIntervalMs: ms }),
 
-    setError: (message) =>
-      set((s) =>
-        message === null
-          ? { lastError: null }
-          : { lastError: message, errorNonce: s.errorNonce + 1 },
-      ),
+    setError: (message) => set((s) => nextErrorState(s, message)),
   }),
 );
 

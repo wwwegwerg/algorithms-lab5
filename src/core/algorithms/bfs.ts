@@ -21,7 +21,7 @@ function neighborsOf(nodeId: NodeId, edges: readonly GraphEdge[]) {
   return out;
 }
 
-export const bfsAlgorithm: GraphAlgorithm = {
+export const bfsAlgorithm = {
   id: "BFS",
   label: "BFS (обход в ширину)",
   supports: ({ nodes, sourceNodeId }) => {
@@ -116,4 +116,4 @@ export const bfsAlgorithm: GraphAlgorithm = {
 
     return steps;
   },
-};
+} satisfies GraphAlgorithm;

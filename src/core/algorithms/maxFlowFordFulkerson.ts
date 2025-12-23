@@ -2,7 +2,7 @@ import type { GraphAlgorithm, OverlayState } from "@/core/algorithms/types";
 import type { EdgeId, GraphEdge, NodeId } from "@/core/graph/types";
 import { isLoop } from "@/core/graph/types";
 
-const MAX_FLOW_ID = "MAX_FLOW_FF";
+const MAX_FLOW_ID = "MAX_FLOW_FF" as const;
 
 type Arc = {
   edgeId: EdgeId;
@@ -127,7 +127,7 @@ function reconstructPath(
   return { arcs, nodes };
 }
 
-export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
+export const maxFlowFordFulkersonAlgorithm = {
   id: MAX_FLOW_ID,
   label: "Max flow (Ford–Fulkerson)",
   supports: ({ nodes, edges, sourceNodeId, sinkNodeId }) => {
@@ -415,4 +415,4 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
       }
     }
   },
-};
+} satisfies GraphAlgorithm;

@@ -21,7 +21,7 @@ function neighborsOf(nodeId: NodeId, edges: readonly GraphEdge[]) {
   return out;
 }
 
-export const dfsAlgorithm: GraphAlgorithm = {
+export const dfsAlgorithm = {
   id: "DFS",
   label: "DFS (обход в глубину)",
   supports: ({ nodes, sourceNodeId }) => {
@@ -116,4 +116,4 @@ export const dfsAlgorithm: GraphAlgorithm = {
 
     return steps;
   },
-};
+} satisfies GraphAlgorithm;

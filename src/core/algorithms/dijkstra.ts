@@ -75,7 +75,7 @@ function reconstructPath(
   return { nodes, edges };
 }
 
-export const dijkstraAlgorithm: GraphAlgorithm = {
+export const dijkstraAlgorithm = {
   id: "DIJKSTRA",
   label: "Dijkstra (кратчайший путь)",
   supports: ({ nodes, edges, sourceNodeId, sinkNodeId }) => {
@@ -297,4 +297,4 @@ export const dijkstraAlgorithm: GraphAlgorithm = {
 
     return steps;
   },
-};
+} satisfies GraphAlgorithm;
