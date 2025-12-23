@@ -80,7 +80,8 @@ export function InfoOverlay({
       activeNodeIds: [],
       visitedNodeIds: [],
       frontierNodeIds: [],
-      activeEdgeId: undefined,
+      activeEdgeIds: [],
+      frontierEdgeIds: [],
     } satisfies OverlayState);
 
   return (
@@ -138,7 +139,7 @@ export function InfoOverlay({
         {activeToolbar === "algorithms" && (
           <>
             <Separator className="bg-white/10" />
-            <Section title="Algorithm">
+            <Section title="Algorithm (nodes)">
               <Field
                 label="activeNodeIds"
                 value={
@@ -163,9 +164,29 @@ export function InfoOverlay({
                     : overlay.frontierNodeIds.join(", ")
                 }
               />
+            </Section>
+          </>
+        )}
+
+        {activeToolbar === "algorithms" && (
+          <>
+            <Separator className="bg-white/10" />
+            <Section title="Algorithm (edges)">
               <Field
-                label="activeEdgeId"
-                value={overlay.activeEdgeId ?? "(none)"}
+                label="activeEdgeIds"
+                value={
+                  overlay.activeEdgeIds.length === 0
+                    ? "(none)"
+                    : overlay.activeEdgeIds.join(", ")
+                }
+              />
+              <Field
+                label="frontierEdgeIds"
+                value={
+                  overlay.frontierEdgeIds.length === 0
+                    ? "(none)"
+                    : overlay.frontierEdgeIds.join(", ")
+                }
               />
             </Section>
           </>

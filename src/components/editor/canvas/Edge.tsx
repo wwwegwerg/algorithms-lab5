@@ -14,6 +14,7 @@ export type EdgeProps =
       labelText?: string | null;
       isSelected: boolean;
       isAlgorithmActive: boolean;
+      isAlgorithmFrontier: boolean;
       onPointerDown: (
         id: EdgeId,
         e: React.PointerEvent<SVGPathElement>,
@@ -45,6 +46,7 @@ function EdgeInner(props: EdgeProps) {
     labelText,
     isSelected,
     isAlgorithmActive,
+    isAlgorithmFrontier,
     onPointerDown,
     onDoubleClick,
   } = props;
@@ -74,6 +76,7 @@ function EdgeInner(props: EdgeProps) {
         d={d}
         className={cn(
           "fill-none stroke-muted-foreground transition-colors",
+          isAlgorithmFrontier && "stroke-primary/70",
           isHighlighted && "stroke-primary",
           mode === "delete"
             ? "group-hover:stroke-destructive"

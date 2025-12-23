@@ -2,10 +2,13 @@ import type { EdgeId, GraphEdge, GraphNode, NodeId } from "@/core/graph/types";
 
 export type OverlayState = {
   message?: string;
+
   activeNodeIds: NodeId[];
   visitedNodeIds: NodeId[];
   frontierNodeIds: NodeId[];
-  activeEdgeId?: EdgeId;
+
+  activeEdgeIds: EdgeId[];
+  frontierEdgeIds: EdgeId[];
 
   flowByEdgeId?: Record<EdgeId, number>;
 };

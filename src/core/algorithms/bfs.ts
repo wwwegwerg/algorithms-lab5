@@ -42,6 +42,8 @@ export const bfsAlgorithm: GraphAlgorithm = {
           activeNodeIds: [],
           visitedNodeIds: [],
           frontierNodeIds: [],
+          activeEdgeIds: [],
+          frontierEdgeIds: [],
         },
       ];
     }
@@ -59,6 +61,8 @@ export const bfsAlgorithm: GraphAlgorithm = {
       activeNodeIds: [],
       visitedNodeIds: Array.from(visited),
       frontierNodeIds: [...queue],
+      activeEdgeIds: [],
+      frontierEdgeIds: [],
     });
 
     while (queue.length > 0) {
@@ -70,6 +74,8 @@ export const bfsAlgorithm: GraphAlgorithm = {
         activeNodeIds: [node],
         visitedNodeIds: Array.from(visited),
         frontierNodeIds: [...queue],
+        activeEdgeIds: [],
+        frontierEdgeIds: [],
       });
 
       const neighbors = neighborsOf(node, edges);
@@ -79,7 +85,8 @@ export const bfsAlgorithm: GraphAlgorithm = {
           activeNodeIds: [node],
           visitedNodeIds: Array.from(visited),
           frontierNodeIds: [...queue],
-          activeEdgeId: viaEdgeId,
+          activeEdgeIds: [viaEdgeId],
+          frontierEdgeIds: [],
         });
 
         if (visited.has(neighbor)) continue;
@@ -92,7 +99,8 @@ export const bfsAlgorithm: GraphAlgorithm = {
           activeNodeIds: [node],
           visitedNodeIds: Array.from(visited),
           frontierNodeIds: [...queue],
-          activeEdgeId: viaEdgeId,
+          activeEdgeIds: [viaEdgeId],
+          frontierEdgeIds: [],
         });
       }
     }
@@ -102,6 +110,8 @@ export const bfsAlgorithm: GraphAlgorithm = {
       activeNodeIds: [],
       visitedNodeIds: Array.from(visited),
       frontierNodeIds: [],
+      activeEdgeIds: [],
+      frontierEdgeIds: [],
     });
 
     return steps;

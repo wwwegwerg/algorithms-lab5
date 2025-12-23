@@ -219,7 +219,13 @@ export function GraphCanvas({
     return new Set(algorithmOverlay?.frontierNodeIds ?? []);
   }, [algorithmOverlay?.frontierNodeIds]);
 
-  const algorithmActiveEdgeId = algorithmOverlay?.activeEdgeId ?? null;
+  const algorithmActiveEdgeSet = React.useMemo(() => {
+    return new Set(algorithmOverlay?.activeEdgeIds ?? []);
+  }, [algorithmOverlay?.activeEdgeIds]);
+
+  const algorithmFrontierEdgeSet = React.useMemo(() => {
+    return new Set(algorithmOverlay?.frontierEdgeIds ?? []);
+  }, [algorithmOverlay?.frontierEdgeIds]);
 
   const applyNodePositionUpdates = React.useCallback(
     (updates: Array<{ id: NodeId; x: number; y: number }>) => {
@@ -999,7 +1005,8 @@ export function GraphCanvas({
               labelPoint={labelPoint}
               labelText={labelText}
               isSelected={selectedEdgeSet.has(e.id)}
-              isAlgorithmActive={algorithmActiveEdgeId === e.id}
+              isAlgorithmActive={algorithmActiveEdgeSet.has(e.id)}
+              isAlgorithmFrontier={algorithmFrontierEdgeSet.has(e.id)}
               onPointerDown={handleEdgePointerDown}
               onDoubleClick={handleEdgeDoubleClick}
             />

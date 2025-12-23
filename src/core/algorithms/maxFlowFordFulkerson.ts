@@ -89,10 +89,19 @@ function arcsFrom(
 
 function pushStep(
   steps: OverlayState[],
-  step: Omit<OverlayState, "flowByEdgeId">,
+  step: Partial<Omit<OverlayState, "flowByEdgeId">>,
   flow: Record<EdgeId, number>,
 ) {
-  steps.push({ ...step, flowByEdgeId: cloneFlow(flow) });
+  const base: Omit<OverlayState, "flowByEdgeId"> = {
+    message: undefined,
+    activeNodeIds: [],
+    visitedNodeIds: [],
+    frontierNodeIds: [],
+    activeEdgeIds: [],
+    frontierEdgeIds: [],
+  };
+
+  steps.push({ ...base, ...step, flowByEdgeId: cloneFlow(flow) });
 }
 
 function reconstructPath(
@@ -177,6 +186,8 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
           activeNodeIds: [],
           visitedNodeIds: [],
           frontierNodeIds: [],
+          activeEdgeIds: [],
+          frontierEdgeIds: [],
           flowByEdgeId: {},
         },
       ];
@@ -189,6 +200,8 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
           activeNodeIds: [],
           visitedNodeIds: [],
           frontierNodeIds: [],
+          activeEdgeIds: [],
+          frontierEdgeIds: [],
           flowByEdgeId: {},
         },
       ];
@@ -201,6 +214,8 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
           activeNodeIds: [],
           visitedNodeIds: [],
           frontierNodeIds: [],
+          activeEdgeIds: [],
+          frontierEdgeIds: [],
           flowByEdgeId: {},
         },
       ];
@@ -214,18 +229,22 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
             activeNodeIds: [],
             visitedNodeIds: [],
             frontierNodeIds: [],
+            activeEdgeIds: [],
+            frontierEdgeIds: [],
             flowByEdgeId: {},
           },
         ];
       }
 
-      if (!Number.isInteger(e.weight) || e.weight <= 0) {
+      if (sourceNodeId === sinkNodeId) {
         return [
           {
-            message: "Ошибка: capacity должна быть целым числом > 0",
+            message: "Ошибка: source и sink должны быть разными",
             activeNodeIds: [],
             visitedNodeIds: [],
             frontierNodeIds: [],
+            activeEdgeIds: [],
+            frontierEdgeIds: [],
             flowByEdgeId: {},
           },
         ];
@@ -291,11 +310,11 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
           pushStep(
             steps,
             {
-              message: `Маркировка: пробуем дугу ${arc.edgeId} (${sign}), residual=${arc.residual}`,
+              message: `Маркировка: пробуем ребро ${arc.edgeId} (${sign}), residual=${arc.residual}`,
               activeNodeIds: [nodeId],
               visitedNodeIds: Array.from(marked),
               frontierNodeIds: [...queue],
-              activeEdgeId: arc.edgeId,
+              activeEdgeIds: [arc.edgeId],
             },
             flow,
           );
@@ -313,7 +332,7 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
               activeNodeIds: [arc.to],
               visitedNodeIds: Array.from(marked),
               frontierNodeIds: [...queue],
-              activeEdgeId: arc.edgeId,
+              activeEdgeIds: [arc.edgeId],
             },
             flow,
           );
@@ -350,6 +369,8 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
             activeNodeIds: [],
             visitedNodeIds: [],
             frontierNodeIds: [],
+            activeEdgeIds: [],
+            frontierEdgeIds: [],
           },
           flow,
         );
@@ -387,7 +408,7 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
             activeNodeIds: [arc.from, arc.to],
             visitedNodeIds: [],
             frontierNodeIds: [],
-            activeEdgeId: arc.edgeId,
+            activeEdgeIds: [arc.edgeId],
           },
           flow,
         );
