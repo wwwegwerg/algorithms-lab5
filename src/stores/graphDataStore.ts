@@ -34,13 +34,13 @@ type GraphDataActions = {
   addEdge: (draft: {
     source: NodeId;
     target: NodeId;
-    directed: boolean;
+    isDirected: boolean;
     weight?: number;
   }) => EdgeId | null;
 
   updateEdge: (
     id: EdgeId,
-    patch: Partial<Pick<GraphEdge, "directed" | "weight">>,
+    patch: Partial<Pick<GraphEdge, "isDirected" | "weight">>,
   ) => void;
   deleteEdge: (id: EdgeId) => void;
 
@@ -184,7 +184,7 @@ export const useGraphDataStore = create<GraphDataState & GraphDataActions>()(
           const next: GraphEdge = { ...edge, ...patch };
 
           if (isLoop(next)) {
-            next.directed = false;
+            next.isDirected = false;
           }
 
           const validation = validateEdgeDraft(
@@ -193,7 +193,7 @@ export const useGraphDataStore = create<GraphDataState & GraphDataActions>()(
             {
               source: next.source,
               target: next.target,
-              directed: next.directed,
+              isDirected: next.isDirected,
               weight: next.weight,
             },
             id,

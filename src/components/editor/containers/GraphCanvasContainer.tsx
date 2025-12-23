@@ -3,10 +3,13 @@ import { useShallow } from "zustand/shallow";
 import { GraphCanvas } from "@/components/editor/GraphCanvas";
 import type { EdgeId, NodeId } from "@/core/graph/types";
 import { isEditableTarget } from "@/lib/dom";
+import { selectOverlay, useAlgorithmStore } from "@/stores/algorithmStore";
 import { useGraphDataStore } from "@/stores/graphDataStore";
 import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export function GraphCanvasContainer() {
+  const algorithmOverlay = useAlgorithmStore(selectOverlay);
+
   const { nodes, edges, updateNode, updateNodes } = useGraphDataStore(
     useShallow((s) => ({
       nodes: s.nodes,
@@ -17,6 +20,7 @@ export function GraphCanvasContainer() {
   );
 
   const {
+    activeToolbar,
     mode,
     selection,
     edgeDraftSourceId,
@@ -33,12 +37,13 @@ export function GraphCanvasContainer() {
     deleteSelection,
     openEditNode,
     openEditEdge,
-    infoOpen,
+    isInfoOpen,
     setCanvasCamera,
     cameraCommand,
     cameraCommandNonce,
   } = useGraphUiStore(
     useShallow((s) => ({
+      activeToolbar: s.activeToolbar,
       mode: s.interaction.mode,
       selection: s.interaction.selection,
       edgeDraftSourceId: s.interaction.edgeDraft?.sourceId ?? null,
@@ -55,7 +60,7 @@ export function GraphCanvasContainer() {
       deleteSelection: s.deleteSelection,
       openEditNode: s.openEditNode,
       openEditEdge: s.openEditEdge,
-      infoOpen: s.infoOpen,
+      isInfoOpen: s.isInfoOpen,
       setCanvasCamera: s.setCanvasCamera,
       cameraCommand: s.cameraCommand,
       cameraCommandNonce: s.cameraCommandNonce,
@@ -63,6 +68,8 @@ export function GraphCanvasContainer() {
   );
 
   React.useEffect(() => {
+    if (activeToolbar === "algorithms") return;
+
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Backspace" && e.key !== "Delete") return;
 
@@ -72,22 +79,22 @@ export function GraphCanvasContainer() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [deleteSelection]);
+  }, [activeToolbar, deleteSelection]);
 
   React.useEffect(() => {
-    if (infoOpen) return;
+    if (isInfoOpen) return;
     setCanvasCamera(null);
-  }, [infoOpen, setCanvasCamera]);
+  }, [isInfoOpen, setCanvasCamera]);
 
   const onBackgroundClick = React.useCallback(
-    (p: { x: number; y: number }, additive: boolean) => {
+    (p: { x: number; y: number }, isAdditive: boolean) => {
       if (mode === "add_node") {
         addNodeAt(p.x, p.y);
         return;
       }
 
       if (mode === "select") {
-        if (!additive) clearSelection();
+        if (!isAdditive) clearSelection();
         return;
       }
 
@@ -99,7 +106,7 @@ export function GraphCanvasContainer() {
   );
 
   const onNodeClick = React.useCallback(
-    (id: NodeId, additive: boolean) => {
+    (id: NodeId, isAdditive: boolean) => {
       if (mode === "delete") {
         deleteNode(id);
         return;
@@ -115,20 +122,20 @@ export function GraphCanvasContainer() {
         return;
       }
 
-      const allowAdditive = mode !== "add_node";
-      selectNode(id, allowAdditive && additive);
+      const isAdditiveAllowed = mode !== "add_node";
+      selectNode(id, isAdditiveAllowed && isAdditive);
     },
     [addEdgeTo, deleteNode, edgeDraftSourceId, mode, selectNode, startEdgeFrom],
   );
 
   const onEdgeClick = React.useCallback(
-    (id: EdgeId, additive: boolean) => {
+    (id: EdgeId, isAdditive: boolean) => {
       if (mode === "delete") {
         deleteEdge(id);
         return;
       }
 
-      selectEdge(id, additive);
+      selectEdge(id, isAdditive);
     },
     [deleteEdge, mode, selectEdge],
   );
@@ -149,18 +156,20 @@ export function GraphCanvasContainer() {
 
   const onNodeDoubleClick = React.useCallback(
     (id: NodeId) => {
+      if (activeToolbar === "algorithms") return;
       if (mode !== "select") return;
       openEditNode(id);
     },
-    [mode, openEditNode],
+    [activeToolbar, mode, openEditNode],
   );
 
   const onEdgeDoubleClick = React.useCallback(
     (id: EdgeId) => {
+      if (activeToolbar === "algorithms") return;
       if (mode !== "select") return;
       openEditEdge(id);
     },
-    [mode, openEditEdge],
+    [activeToolbar, mode, openEditEdge],
   );
 
   return (
@@ -170,12 +179,15 @@ export function GraphCanvasContainer() {
       selection={selection}
       mode={mode}
       edgeDraftSourceId={edgeDraftSourceId}
+      algorithmOverlay={
+        activeToolbar === "algorithms" ? algorithmOverlay : null
+      }
       cameraCommand={
         cameraCommand
           ? { nonce: cameraCommandNonce, command: cameraCommand }
           : null
       }
-      onCameraChange={infoOpen ? setCanvasCamera : undefined}
+      onCameraChange={isInfoOpen ? setCanvasCamera : undefined}
       onBackgroundClick={onBackgroundClick}
       onNodeClick={onNodeClick}
       onEdgeClick={onEdgeClick}

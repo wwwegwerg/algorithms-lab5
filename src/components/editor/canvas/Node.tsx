@@ -8,7 +8,11 @@ export type NodeProps = {
   node: GraphNode;
   mode: EditorMode;
   isSelected: boolean;
-  edgeDraftSourceId: NodeId | null;
+  isDraftSource: boolean;
+
+  isAlgorithmActive: boolean;
+  isAlgorithmVisited: boolean;
+  isAlgorithmFrontier: boolean;
 
   onPointerDown: (id: NodeId, e: React.PointerEvent<SVGGElement>) => void;
   onDoubleClick?: (id: NodeId, e: React.MouseEvent<SVGGElement>) => void;
@@ -18,17 +22,17 @@ function NodeInner({
   node,
   mode,
   isSelected,
-  edgeDraftSourceId,
+  isDraftSource,
+  isAlgorithmActive,
+  isAlgorithmVisited,
+  isAlgorithmFrontier,
   onPointerDown,
   onDoubleClick,
 }: NodeProps) {
-  const isDraftSource = mode === "add_edge" && edgeDraftSourceId === node.id;
-
-  const showRing = isDraftSource || isSelected;
   const ringRadius = isDraftSource ? NODE_R + 7 : NODE_R + 5;
-
-  const hoverEnabled =
+  const isHoverable =
     mode === "select" || mode === "add_edge" || mode === "delete";
+  const isHighlighted = isDraftSource || isSelected || isAlgorithmActive;
 
   return (
     <g
@@ -36,34 +40,34 @@ function NodeInner({
       onDoubleClick={
         onDoubleClick ? (e) => onDoubleClick(node.id, e) : undefined
       }
-      className={cn(hoverEnabled && "group cursor-pointer")}
+      className={cn(isHoverable && "group cursor-pointer")}
     >
+      {/* main path */}
       <circle
         cx={node.x}
         cy={node.y}
         r={NODE_R}
         className={cn(
-          "fill-background",
-          isSelected || isDraftSource
-            ? "stroke-primary"
-            : "stroke-muted-foreground",
-          hoverEnabled &&
-            !isSelected &&
-            !isDraftSource &&
-            (mode === "delete"
-              ? "group-hover:stroke-destructive"
-              : "group-hover:stroke-primary"),
+          "fill-background stroke-muted-foreground transition-colors",
+          isAlgorithmVisited && "stroke-primary/35",
+          isAlgorithmFrontier && "stroke-primary/70",
+          isHighlighted && "stroke-primary",
+          mode === "delete"
+            ? "group-hover:stroke-destructive"
+            : "group-hover:stroke-primary",
         )}
         strokeWidth={2}
       />
 
-      {hoverEnabled && !showRing && (
+      {/* halo */}
+      {(isHoverable || isHighlighted) && (
         <circle
           cx={node.x}
           cy={node.y}
-          r={NODE_R + 5}
+          r={ringRadius}
           className={cn(
             "fill-none opacity-0 transition-opacity group-hover:opacity-100",
+            isHighlighted && "opacity-100",
             mode === "delete" ? "stroke-destructive/35" : "stroke-primary/35",
           )}
           strokeWidth={2}
@@ -71,25 +75,13 @@ function NodeInner({
         />
       )}
 
-      {showRing && (
-        <circle
-          cx={node.x}
-          cy={node.y}
-          r={ringRadius}
-          className={cn(
-            "fill-none",
-            isDraftSource ? "stroke-primary/40" : "stroke-primary/30",
-          )}
-          strokeWidth={2}
-        />
-      )}
-
+      {/* label */}
       <text
         x={node.x}
         y={node.y}
         textAnchor="middle"
         dominantBaseline="middle"
-        className={"pointer-events-none fill-foreground text-xs select-none"}
+        className="pointer-events-none fill-foreground text-xs select-none"
       >
         {node.label}
       </text>

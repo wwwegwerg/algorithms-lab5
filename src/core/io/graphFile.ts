@@ -29,14 +29,14 @@ function parseEdge(raw: unknown): GraphEdge | null {
   if (!isRecord(raw)) return null;
   if (!isString(raw.id)) return null;
   if (!isString(raw.source) || !isString(raw.target)) return null;
-  if (typeof raw.directed !== "boolean") return null;
+  if (typeof raw.isDirected !== "boolean") return null;
 
   if (raw.weight === undefined) {
     return {
       id: raw.id,
       source: raw.source,
       target: raw.target,
-      directed: raw.directed,
+      isDirected: raw.isDirected,
     };
   }
 
@@ -46,7 +46,7 @@ function parseEdge(raw: unknown): GraphEdge | null {
     id: raw.id,
     source: raw.source,
     target: raw.target,
-    directed: raw.directed,
+    isDirected: raw.isDirected,
     weight: raw.weight,
   };
 }
@@ -109,7 +109,7 @@ export function loadGraphSnapshot(raw: unknown): GraphFileLoadResult {
       {
         source: edge.source,
         target: edge.target,
-        directed: edge.directed,
+        isDirected: edge.isDirected,
         weight: edge.weight,
       },
       edge.id,

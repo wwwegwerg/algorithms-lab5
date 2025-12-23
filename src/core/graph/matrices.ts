@@ -36,7 +36,7 @@ export function buildAdjacencyMatrix(
 
     const value = edgeValue(edge, unweightedSymbol);
 
-    if (edge.directed) {
+    if (edge.isDirected) {
       values[i][j] = value;
       continue;
     }
@@ -66,7 +66,7 @@ export function buildIncidenceMatrix(
   const nodeIndex = new Map(nodes.map((n, i) => [n.id, i] as const));
 
   const columnLabels = edges.map((e) => {
-    const base = e.directed
+    const base = e.isDirected
       ? `${e.source}->${e.target}`
       : `${e.source}—${e.target}`;
     const w = e.weight === undefined ? "" : ` w=${e.weight}`;
@@ -82,7 +82,7 @@ export function buildIncidenceMatrix(
     const t = nodeIndex.get(edge.target);
     if (s === undefined || t === undefined) return;
 
-    if (edge.directed) {
+    if (edge.isDirected) {
       values[s][col] = "-1";
       values[t][col] = "1";
       return;

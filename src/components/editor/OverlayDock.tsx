@@ -19,8 +19,8 @@ export type OverlayDockProps = {
   edgesCount: number;
   camera: CanvasCamera | null;
 
-  infoOpen: boolean;
-  helpOpen: boolean;
+  isInfoOpen: boolean;
+  isHelpOpen: boolean;
   onToggleInfoOpen: () => void;
   onToggleHelpOpen: () => void;
 };
@@ -33,17 +33,17 @@ export function OverlayDock({
   nodesCount,
   edgesCount,
   camera,
-  infoOpen,
-  helpOpen,
+  isInfoOpen,
+  isHelpOpen,
   onToggleInfoOpen,
   onToggleHelpOpen,
 }: OverlayDockProps) {
   return (
     <div className="pointer-events-none absolute top-3 right-3 z-40 flex items-start gap-2">
       <div className="flex flex-col gap-2">
-        <HelpOverlay isOpen={helpOpen} />
+        <HelpOverlay isOpen={isHelpOpen} />
         <InfoOverlay
-          isOpen={infoOpen}
+          isOpen={isInfoOpen}
           selection={selection}
           node={selectedNode}
           edge={selectedEdge}
@@ -57,24 +57,24 @@ export function OverlayDock({
       <div className="pointer-events-auto flex flex-col gap-2">
         <Button
           size="icon-sm"
-          variant={helpOpen ? "default" : "outline"}
+          variant={isHelpOpen ? "default" : "outline"}
           onClick={onToggleHelpOpen}
           title="Help"
           aria-label="Help"
-          aria-pressed={helpOpen}
-          aria-expanded={helpOpen}
+          aria-pressed={isHelpOpen}
+          aria-expanded={isHelpOpen}
         >
           <KeyboardIcon />
         </Button>
 
         <Button
           size="icon-sm"
-          variant={infoOpen ? "default" : "outline"}
+          variant={isInfoOpen ? "default" : "outline"}
           onClick={onToggleInfoOpen}
           title="Info"
           aria-label="Info"
-          aria-pressed={infoOpen}
-          aria-expanded={infoOpen}
+          aria-pressed={isInfoOpen}
+          aria-expanded={isInfoOpen}
         >
           <Bug />
         </Button>

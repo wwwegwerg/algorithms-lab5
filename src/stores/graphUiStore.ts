@@ -46,10 +46,10 @@ type EditTarget = { kind: "node"; id: NodeId } | { kind: "edge"; id: EdgeId };
 type GraphUiState = {
   interaction: InteractionState;
 
-  infoOpen: boolean;
-  helpOpen: boolean;
+  isInfoOpen: boolean;
+  isHelpOpen: boolean;
 
-  newEdgeDirected: boolean;
+  isNewEdgeDirected: boolean;
 
   matrixDialogKind: MatrixDialogKind;
   matrixUnweightedSymbol: MatrixUnweightedSymbol;
@@ -78,15 +78,15 @@ type GraphUiActions = {
   showAlgorithmToolbar: () => void;
 
   clearSelection: () => void;
-  selectNode: (id: NodeId, additive: boolean) => void;
-  selectEdge: (id: EdgeId, additive: boolean) => void;
+  selectNode: (id: NodeId, isAdditive: boolean) => void;
+  selectEdge: (id: EdgeId, isAdditive: boolean) => void;
   applyBoxSelection: (
     nodeIds: NodeId[],
     edgeIds: EdgeId[],
-    additive: boolean,
+    isAdditive: boolean,
   ) => void;
 
-  setInfoOpen: (open: boolean) => void;
+  setInfoOpen: (isOpen: boolean) => void;
   toggleInfoOpen: () => void;
 
   setCanvasCamera: (camera: CanvasCamera | null) => void;
@@ -97,7 +97,7 @@ type GraphUiActions = {
   requestResetZoom: () => void;
   requestGoToOrigin: () => void;
 
-  setHelpOpen: (open: boolean) => void;
+  setHelpOpen: (isOpen: boolean) => void;
   toggleHelpOpen: () => void;
 
   setMatrixDialogKind: (kind: MatrixDialogKind) => void;
@@ -108,7 +108,7 @@ type GraphUiActions = {
 
   startEdgeFrom: (id: NodeId) => void;
   cancelEdgeDraft: () => void;
-  setNewEdgeDirected: (directed: boolean) => void;
+  setNewEdgeDirected: (isDirected: boolean) => void;
   addEdgeTo: (targetId: NodeId) => EdgeId | null;
 
   deleteNode: (id: NodeId) => void;
@@ -176,10 +176,10 @@ const initialState: GraphUiState = {
     edgeDraft: null,
   },
 
-  infoOpen: false,
-  helpOpen: false,
+  isInfoOpen: false,
+  isHelpOpen: false,
 
-  newEdgeDirected: false,
+  isNewEdgeDirected: false,
 
   matrixDialogKind: "none",
   matrixUnweightedSymbol: "-",
@@ -272,11 +272,11 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
       }));
     },
 
-    selectNode: (id, additive) =>
+    selectNode: (id, isAdditive) =>
       set((s) => {
         clearGraphError();
 
-        if (!additive) {
+        if (!isAdditive) {
           return {
             ...s,
             interaction: {
@@ -313,11 +313,11 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
         };
       }),
 
-    selectEdge: (id, additive) =>
+    selectEdge: (id, isAdditive) =>
       set((s) => {
         clearGraphError();
 
-        if (!additive) {
+        if (!isAdditive) {
           return {
             ...s,
             interaction: {
@@ -354,7 +354,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
         };
       }),
 
-    applyBoxSelection: (nodeIds, edgeIds, additive) =>
+    applyBoxSelection: (nodeIds, edgeIds, isAdditive) =>
       set((s) => {
         clearGraphError();
 
@@ -363,11 +363,11 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
             ? { kind: "node", id: nodeIds[nodeIds.length - 1]! }
             : edgeIds.length > 0
               ? { kind: "edge", id: edgeIds[edgeIds.length - 1]! }
-              : additive
+              : isAdditive
                 ? s.interaction.selection.focus
                 : null;
 
-        const selection: SelectionState = additive
+        const selection: SelectionState = isAdditive
           ? {
               nodeIds: nodeIds.reduce(
                 (acc, id) => uniqueAppend(acc, id),
@@ -391,8 +391,8 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
         };
       }),
 
-    setInfoOpen: (open) => set({ infoOpen: open }),
-    toggleInfoOpen: () => set((s) => ({ infoOpen: !s.infoOpen })),
+    setInfoOpen: (isOpen) => set({ isInfoOpen: isOpen }),
+    toggleInfoOpen: () => set((s) => ({ isInfoOpen: !s.isInfoOpen })),
 
     setCanvasCamera: (camera) => set({ canvasCamera: camera }),
 
@@ -409,8 +409,8 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
     requestGoToOrigin: () =>
       get().requestCameraCommand({ kind: "go_to_origin" }),
 
-    setHelpOpen: (open) => set({ helpOpen: open }),
-    toggleHelpOpen: () => set((s) => ({ helpOpen: !s.helpOpen })),
+    setHelpOpen: (isOpen) => set({ isHelpOpen: isOpen }),
+    toggleHelpOpen: () => set((s) => ({ isHelpOpen: !s.isHelpOpen })),
 
     setMatrixDialogKind: (kind) => {
       clearGraphError();
@@ -464,7 +464,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
       }));
     },
 
-    setNewEdgeDirected: (directed) => set({ newEdgeDirected: directed }),
+    setNewEdgeDirected: (isDirected) => set({ isNewEdgeDirected: isDirected }),
 
     addEdgeTo: (targetId) => {
       const sourceId = get().interaction.edgeDraft?.sourceId;
@@ -473,7 +473,7 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
       const id = useGraphDataStore.getState().addEdge({
         source: sourceId,
         target: targetId,
-        directed: get().newEdgeDirected,
+        isDirected: get().isNewEdgeDirected,
       });
 
       if (!id) return null;

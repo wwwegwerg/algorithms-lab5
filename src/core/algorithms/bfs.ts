@@ -8,7 +8,7 @@ function neighborsOf(nodeId: NodeId, edges: readonly GraphEdge[]) {
   for (const e of edges) {
     if (isLoop(e)) continue;
 
-    if (e.directed) {
+    if (e.isDirected) {
       if (e.source === nodeId)
         out.push({ neighbor: e.target, viaEdgeId: e.id });
       continue;
@@ -22,11 +22,11 @@ function neighborsOf(nodeId: NodeId, edges: readonly GraphEdge[]) {
 }
 
 export const bfsAlgorithm: GraphAlgorithm = {
-  id: "bfs",
+  id: "BFS",
   label: "BFS (обход в ширину)",
   supports: ({ nodes, startNodeId }) => {
-    const exists = nodes.some((n) => n.id === startNodeId);
-    return exists
+    const isPresent = nodes.some((n) => n.id === startNodeId);
+    return isPresent
       ? { ok: true }
       : { ok: false, message: "Стартовая вершина не найдена" };
   },

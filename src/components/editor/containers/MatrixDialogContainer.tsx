@@ -38,7 +38,7 @@ export function MatrixDialogContainer() {
 
   return (
     <MatrixDialog
-      open={matrixDialogKind !== "none"}
+      isOpen={matrixDialogKind !== "none"}
       tab={tab}
       onChangeTab={onChangeTab}
       nodes={nodes}

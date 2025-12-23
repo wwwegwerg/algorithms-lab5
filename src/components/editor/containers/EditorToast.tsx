@@ -1,25 +1,48 @@
 import * as React from "react";
-import { AlertTriangleIcon } from "lucide-react";
+import { AlertTriangleIcon, InfoIcon } from "lucide-react";
 import { useShallow } from "zustand/shallow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { selectOverlay, useAlgorithmStore } from "@/stores/algorithmStore";
 import { useGraphDataStore } from "@/stores/graphDataStore";
+import { useGraphUiStore } from "@/stores/graphUiStore";
+
+type ToastKind = "error" | "info";
 
 export function EditorToast() {
-  const { message, messageKey } = useGraphDataStore(
+  const activeToolbar = useGraphUiStore((s) => s.activeToolbar);
+
+  const { graphMessage, graphMessageKey } = useGraphDataStore(
     useShallow((s) => ({
-      message: s.lastError,
-      messageKey: s.lastError ? `graph:${s.errorNonce}` : null,
+      graphMessage: s.lastError,
+      graphMessageKey: s.lastError ? `graph:${s.errorNonce}` : null,
     })),
   );
 
+  const { algorithmId, stepIndex } = useAlgorithmStore(
+    useShallow((s) => ({ algorithmId: s.algorithmId, stepIndex: s.stepIndex })),
+  );
+  const algorithmOverlay = useAlgorithmStore(selectOverlay);
+
+  const algorithmMessage =
+    activeToolbar === "algorithms" ? (algorithmOverlay?.message ?? null) : null;
+  const algorithmMessageKey = algorithmMessage
+    ? `algo:${algorithmId}:${stepIndex}`
+    : null;
+
+  const message = graphMessage ?? algorithmMessage;
+  const messageKey = graphMessageKey ?? algorithmMessageKey;
+  const kind: ToastKind = graphMessage ? "error" : "info";
+
   const [toast, setToast] = React.useState<{
     key: string;
+    kind: ToastKind;
     message: string;
   } | null>(null);
   const [isToastOpen, setIsToastOpen] = React.useState(false);
 
   React.useEffect(() => {
     const EXIT_MS = 200;
+    const DURATION_MS = kind === "error" ? 4000 : 1200;
 
     if (!message || !messageKey) {
       setIsToastOpen(false);
@@ -27,17 +50,20 @@ export function EditorToast() {
       return () => window.clearTimeout(id);
     }
 
-    setToast({ key: messageKey, message });
+    setToast({ key: messageKey, kind, message });
     setIsToastOpen(true);
 
-    const hideId = window.setTimeout(() => setIsToastOpen(false), 4000);
-    const unmountId = window.setTimeout(() => setToast(null), 4000 + EXIT_MS);
+    const hideId = window.setTimeout(() => setIsToastOpen(false), DURATION_MS);
+    const unmountId = window.setTimeout(
+      () => setToast(null),
+      DURATION_MS + EXIT_MS,
+    );
 
     return () => {
       window.clearTimeout(hideId);
       window.clearTimeout(unmountId);
     };
-  }, [message, messageKey]);
+  }, [kind, message, messageKey]);
 
   return (
     toast && (
@@ -49,11 +75,13 @@ export function EditorToast() {
             className="duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-left-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-left-2 motion-reduce:animate-none"
           >
             <Alert
-              variant="destructive"
+              variant={toast.kind === "error" ? "destructive" : "default"}
               className="shadow-lg ring-1 ring-foreground/10"
             >
-              <AlertTriangleIcon />
-              <AlertTitle>Ошибка графа</AlertTitle>
+              {toast.kind === "error" ? <AlertTriangleIcon /> : <InfoIcon />}
+              <AlertTitle>
+                {toast.kind === "error" ? "Ошибка графа" : "Алгоритм"}
+              </AlertTitle>
               <AlertDescription>{toast.message}</AlertDescription>
             </Alert>
           </div>

@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 type MatrixTab = "adjacency" | "incidence";
 
 export type MatrixDialogProps = {
-  open: boolean;
+  isOpen: boolean;
   tab: MatrixTab;
   onChangeTab: (tab: MatrixTab) => void;
 
@@ -47,7 +47,7 @@ export type MatrixDialogProps = {
 };
 
 export function MatrixDialog({
-  open,
+  isOpen,
   tab,
   onChangeTab,
   nodes,
@@ -78,13 +78,13 @@ export function MatrixDialog({
 
   return (
     <Dialog
-      open={open}
+      open={isOpen}
       onOpenChange={(nextOpen) => {
         if (nextOpen) return;
         onClose();
       }}
     >
-      {open && (
+      {isOpen && (
         <DialogContent className="sm:max-w-160 md:max-w-3xl lg:max-w-5xl">
           <Tabs value={tab} onValueChange={onValueChange} className="min-w-0">
             <DialogHeader>

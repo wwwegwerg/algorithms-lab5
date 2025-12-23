@@ -17,8 +17,10 @@
 - Imports: prefer `@/` alias; use `import type`; keep imports sorted (Prettier + sort-imports).
 - React: function components + hooks; keep render logic simple; use `useCallback` for handlers passed down.
 - State: use zustand stores in `src/stores/*`; keep data vs UI state separated.
-- Tailwind: compose class names with `cn()` from `src/lib/utils.ts`.
+- Tailwind: compose class names with `cn()` from `src/lib/utils.ts`; keep conditions inline in `className` (avoid helper booleans/constants solely for className; don’t build class strings in variables).
 - Prefer `const`; avoid `let` unless truly needed.
+- Variables: prefer single-word names where possible (use longer names when it improves clarity).
+- Functions: keep logic in one function unless it’s clearly composable or reusable.
 - Error handling: prefer `{ ok: boolean, ... }` results or store `lastError`; avoid exceptions for UI flow.
-- UI kit: do not modify `src/components/ui/**` unless explicitly requested.
+- UI kit: do not modify `src/components/ui/**` unless explicitly requested; prefer fixing layout/behavior at call sites via props/className.
 - Cursor/Copilot rules: none found in `.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`.

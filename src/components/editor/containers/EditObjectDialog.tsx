@@ -37,8 +37,9 @@ function parseWeight(value: string): number | undefined | null {
 type EditKind = "node" | "edge" | null;
 
 export function EditObjectDialog() {
-  const { editTarget, closeEditDialog } = useGraphUiStore(
+  const { activeToolbar, editTarget, closeEditDialog } = useGraphUiStore(
     useShallow((s) => ({
+      activeToolbar: s.activeToolbar,
       editTarget: s.editTarget,
       closeEditDialog: s.closeEditDialog,
     })),
@@ -53,7 +54,13 @@ export function EditObjectDialog() {
     })),
   );
 
-  const open = editTarget !== null;
+  const isOpen = editTarget !== null;
+
+  React.useEffect(() => {
+    if (activeToolbar !== "algorithms") return;
+    if (!isOpen) return;
+    closeEditDialog();
+  }, [activeToolbar, closeEditDialog, isOpen]);
 
   const [nodeLabel, setNodeLabel] = React.useState("");
   const [edgeWeight, setEdgeWeight] = React.useState("");
@@ -73,7 +80,7 @@ export function EditObjectDialog() {
   const lastTargetKeyRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (!open || !editTarget) {
+    if (!isOpen || !editTarget) {
       lastTargetKeyRef.current = null;
       return;
     }
@@ -103,7 +110,7 @@ export function EditObjectDialog() {
     if (editTarget.kind === "edge" && !edge) {
       closeEditDialog();
     }
-  }, [closeEditDialog, editTarget, edge, node, open]);
+  }, [closeEditDialog, editTarget, edge, node, isOpen]);
 
   const title =
     kind === "node"
@@ -119,16 +126,18 @@ export function EditObjectDialog() {
         ? `Ребро ${edge?.id ?? ""}`
         : "";
 
-  const canSubmit =
+  const isValid =
     kind === "node"
       ? node !== null && nodeLabel.trim().length > 0
       : kind === "edge"
         ? edge !== null && parseWeight(edgeWeight) !== null
         : false;
 
+  if (activeToolbar === "algorithms") return null;
+
   return (
     <Dialog
-      open={open}
+      open={isOpen}
       onOpenChange={(nextOpen) => {
         if (nextOpen) return;
         closeEditDialog();
@@ -212,9 +221,9 @@ export function EditObjectDialog() {
             </Button>
             <Button
               type="submit"
-              disabled={!canSubmit}
+              disabled={!isValid}
               className={cn(
-                canSubmit
+                isValid
                   ? "cursor-pointer"
                   : "cursor-not-allowed disabled:pointer-events-auto",
               )}

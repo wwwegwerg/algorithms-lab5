@@ -8,6 +8,7 @@ import {
   pointInBox,
   type BoxSelect,
 } from "@/components/editor/canvas/geometry";
+import type { OverlayState } from "@/core/algorithms/types";
 import type {
   EdgeId,
   EditorMode,
@@ -39,22 +40,24 @@ export type GraphCanvasProps = {
 
   edgeDraftSourceId: NodeId | null;
 
+  algorithmOverlay?: OverlayState | null;
+
   cameraCommand?: { nonce: number; command: CameraCommand } | null;
 
   onCameraChange?: (camera: CanvasCameraState) => void;
 
   onBackgroundClick: (
     point: { x: number; y: number },
-    additive: boolean,
+    isAdditive: boolean,
   ) => void;
-  onNodeClick: (id: NodeId, additive: boolean) => void;
+  onNodeClick: (id: NodeId, isAdditive: boolean) => void;
   onNodeDoubleClick: (id: NodeId) => void;
-  onEdgeClick: (id: EdgeId, additive: boolean) => void;
+  onEdgeClick: (id: EdgeId, isAdditive: boolean) => void;
   onEdgeDoubleClick: (id: EdgeId) => void;
   onBoxSelect: (
     nodeIds: NodeId[],
     edgeIds: EdgeId[],
-    additive: boolean,
+    isAdditive: boolean,
   ) => void;
 
   onNodeDrag: (id: NodeId, x: number, y: number) => void;
@@ -96,6 +99,7 @@ export function GraphCanvas({
   selection,
   mode,
   edgeDraftSourceId,
+  algorithmOverlay,
   cameraCommand,
   onCameraChange,
   onBackgroundClick,
@@ -111,7 +115,7 @@ export function GraphCanvas({
   const ref = React.useRef<SVGSVGElement | null>(null);
 
   const cameraRef = React.useRef<Camera>({ x: 0, y: 0, scale: DEFAULT_SCALE });
-  const cameraInitializedRef = React.useRef(false);
+  const isCameraInitializedRef = React.useRef(false);
 
   const pendingCameraRef = React.useRef<CanvasCameraState | null>(null);
   const sentCameraKeyRef = React.useRef<string | null>(null);
@@ -122,8 +126,8 @@ export function GraphCanvas({
   const gridLargeRef = React.useRef<SVGRectElement | null>(null);
   const gridSmallRef = React.useRef<SVGRectElement | null>(null);
 
-  const spacePressedRef = React.useRef(false);
-  const [spacePressed, setSpacePressed] = React.useState(false);
+  const isSpacePressedRef = React.useRef(false);
+  const [isSpacePressed, setSpacePressed] = React.useState(false);
 
   const [panning, setPanning] = React.useState<PanState | null>(null);
 
@@ -151,7 +155,7 @@ export function GraphCanvas({
     startWorld: { x: number; y: number };
     startNode: { x: number; y: number };
     startSelectionNodeIds: NodeId[];
-    wasSelected: boolean;
+    isSelected: boolean;
     startPositions: Map<NodeId, { x: number; y: number }>;
   };
 
@@ -170,7 +174,7 @@ export function GraphCanvas({
   const reverseDirected = React.useMemo(() => {
     const next = new Set<string>();
     for (const edge of edges) {
-      if (!edge.directed) continue;
+      if (!edge.isDirected) continue;
       next.add(`${edge.source}->${edge.target}`);
     }
     return next;
@@ -181,13 +185,14 @@ export function GraphCanvas({
     const labelPointById = new Map<EdgeId, { x: number; y: number } | null>();
 
     for (const edge of edges) {
-      const hasOppositeDirected =
-        edge.directed && reverseDirected.has(`${edge.target}->${edge.source}`);
+      const isOppositeDirected =
+        edge.isDirected &&
+        reverseDirected.has(`${edge.target}->${edge.source}`);
 
-      dById.set(edge.id, edgePath(edge, nodesById, hasOppositeDirected));
+      dById.set(edge.id, edgePath(edge, nodesById, isOppositeDirected));
       labelPointById.set(
         edge.id,
-        edgeLabelPoint(edge, nodesById, hasOppositeDirected),
+        edgeLabelPoint(edge, nodesById, isOppositeDirected),
       );
     }
 
@@ -201,6 +206,20 @@ export function GraphCanvas({
   const selectedEdgeSet = React.useMemo(() => {
     return new Set(selection.edgeIds);
   }, [selection.edgeIds]);
+
+  const algorithmActiveNodeSet = React.useMemo(() => {
+    return new Set(algorithmOverlay?.activeNodeIds ?? []);
+  }, [algorithmOverlay?.activeNodeIds]);
+
+  const algorithmVisitedNodeSet = React.useMemo(() => {
+    return new Set(algorithmOverlay?.visitedNodeIds ?? []);
+  }, [algorithmOverlay?.visitedNodeIds]);
+
+  const algorithmFrontierNodeSet = React.useMemo(() => {
+    return new Set(algorithmOverlay?.frontierNodeIds ?? []);
+  }, [algorithmOverlay?.frontierNodeIds]);
+
+  const algorithmActiveEdgeId = algorithmOverlay?.activeEdgeId ?? null;
 
   const applyNodePositionUpdates = React.useCallback(
     (updates: Array<{ id: NodeId; x: number; y: number }>) => {
@@ -219,7 +238,7 @@ export function GraphCanvas({
   );
 
   const ensureCameraInitialized = React.useCallback((el: SVGSVGElement) => {
-    if (cameraInitializedRef.current) return;
+    if (isCameraInitializedRef.current) return;
 
     const w = el.clientWidth;
     const h = el.clientHeight;
@@ -231,7 +250,7 @@ export function GraphCanvas({
       y: -(h / DEFAULT_SCALE) / 2,
       scale: DEFAULT_SCALE,
     };
-    cameraInitializedRef.current = true;
+    isCameraInitializedRef.current = true;
   }, []);
 
   const applyViewBox = React.useCallback(() => {
@@ -286,7 +305,7 @@ export function GraphCanvas({
     const el = ref.current;
     if (!el) {
       cameraRef.current = { x: 0, y: 0, scale: DEFAULT_SCALE };
-      cameraInitializedRef.current = false;
+      isCameraInitializedRef.current = false;
       return;
     }
 
@@ -298,7 +317,7 @@ export function GraphCanvas({
       y: -(h / DEFAULT_SCALE) / 2,
       scale: DEFAULT_SCALE,
     };
-    cameraInitializedRef.current = true;
+    isCameraInitializedRef.current = true;
 
     applyViewBox();
   }, [applyViewBox]);
@@ -344,7 +363,7 @@ export function GraphCanvas({
     (id: EdgeId, e: React.PointerEvent<SVGPathElement>) => {
       // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
       // Pan shortcuts: middle drag OR Space + left drag.
-      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
+      if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) {
         e.preventDefault();
         e.stopPropagation();
         startPan(e);
@@ -369,7 +388,7 @@ export function GraphCanvas({
     (id: NodeId, e: React.PointerEvent<SVGGElement>) => {
       // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
       // Pan shortcuts: middle drag OR Space + left drag.
-      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
+      if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) {
         e.preventDefault();
         e.stopPropagation();
         startPan(e);
@@ -409,7 +428,7 @@ export function GraphCanvas({
         startWorld: p,
         startNode: { x: node.x, y: node.y },
         startSelectionNodeIds,
-        wasSelected: selectedNodeSet.has(id),
+        isSelected: selectedNodeSet.has(id),
         startPositions,
       };
     },
@@ -534,11 +553,11 @@ export function GraphCanvas({
       if (isEditableTarget(e.target)) return;
 
       if (e.code === "Space") {
-        if (!spacePressedRef.current) {
+        if (!isSpacePressedRef.current) {
           setSpacePressed(true);
         }
 
-        spacePressedRef.current = true;
+        isSpacePressedRef.current = true;
         e.preventDefault();
         return;
       }
@@ -552,12 +571,12 @@ export function GraphCanvas({
 
     function onKeyUp(e: KeyboardEvent) {
       if (e.code !== "Space") return;
-      spacePressedRef.current = false;
+      isSpacePressedRef.current = false;
       setSpacePressed(false);
     }
 
     function onBlur() {
-      spacePressedRef.current = false;
+      isSpacePressedRef.current = false;
       setSpacePressed(false);
       setPanning(null);
     }
@@ -658,7 +677,7 @@ export function GraphCanvas({
         "h-full w-full touch-none bg-muted/20 select-none",
         {
           "cursor-grabbing": panning,
-          "cursor-grab": !panning && spacePressed,
+          "cursor-grab": !panning && isSpacePressed,
         },
         className,
       )}
@@ -698,10 +717,10 @@ export function GraphCanvas({
               (nodeId) => pendingNodeDrag.startPositions.has(nodeId),
             );
 
-            const canGroupDrag =
-              pendingNodeDrag.wasSelected && nodeIds.length > 1;
+            const isGroupDrag =
+              pendingNodeDrag.isSelected && nodeIds.length > 1;
 
-            if (canGroupDrag) {
+            if (isGroupDrag) {
               const updates = nodeIds.flatMap((nodeId) => {
                 const pos = pendingNodeDrag.startPositions.get(nodeId);
                 return pos
@@ -819,7 +838,7 @@ export function GraphCanvas({
           })
           .map((edge) => edge.id);
 
-        onBoxSelect(nodeIds, edgeIds, boxSelect.additive);
+        onBoxSelect(nodeIds, edgeIds, boxSelect.isAdditive);
         setBoxSelect(null);
       }}
       onPointerLeave={(e) => {
@@ -851,7 +870,7 @@ export function GraphCanvas({
 
         pendingNodeDragRef.current = null;
 
-        if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
+        if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) {
           e.preventDefault();
           startPan(e);
           return;
@@ -863,7 +882,7 @@ export function GraphCanvas({
         if (!p) return;
 
         if (mode === "select") {
-          setBoxSelect({ start: p, end: p, additive: e.shiftKey });
+          setBoxSelect({ start: p, end: p, isAdditive: e.shiftKey });
           return;
         }
 
@@ -946,7 +965,7 @@ export function GraphCanvas({
         pointerEvents="none"
       />
 
-      <g className={cn({ "pointer-events-none": spacePressed || panning })}>
+      <g className={cn((isSpacePressed || panning) && "pointer-events-none")}>
         {boxRect && (
           <rect
             x={boxRect.x}
@@ -964,16 +983,18 @@ export function GraphCanvas({
           const d = edgeGeometry.dById.get(e.id) ?? null;
           if (!d) return null;
 
+          const labelPoint = edgeGeometry.labelPointById.get(e.id) ?? null;
+
           return (
             <Edge
               key={e.id}
               variant="edge"
               edge={e}
+              mode={mode}
               d={d}
-              labelPoint={edgeGeometry.labelPointById.get(e.id) ?? null}
-              selected={selectedEdgeSet.has(e.id)}
-              enableHoverOutline={mode === "select" || mode === "delete"}
-              hoverTone={mode === "delete" ? "destructive" : "primary"}
+              labelPoint={labelPoint}
+              isSelected={selectedEdgeSet.has(e.id)}
+              isAlgorithmActive={algorithmActiveEdgeId === e.id}
               onPointerDown={handleEdgePointerDown}
               onDoubleClick={handleEdgeDoubleClick}
             />
@@ -990,7 +1011,10 @@ export function GraphCanvas({
             node={n}
             mode={mode}
             isSelected={selectedNodeSet.has(n.id)}
-            edgeDraftSourceId={edgeDraftSourceId}
+            isDraftSource={edgeDraftSourceId === n.id}
+            isAlgorithmActive={algorithmActiveNodeSet.has(n.id)}
+            isAlgorithmVisited={algorithmVisitedNodeSet.has(n.id)}
+            isAlgorithmFrontier={algorithmFrontierNodeSet.has(n.id)}
             onPointerDown={handleNodePointerDown}
             onDoubleClick={handleNodeDoubleClick}
           />

@@ -8,7 +8,7 @@ function hasNode(nodes: readonly GraphNode[], id: NodeId) {
 }
 
 function connectsPair(edge: GraphEdge, a: NodeId, b: NodeId) {
-  if (edge.directed) return edge.source === a && edge.target === b;
+  if (edge.isDirected) return edge.source === a && edge.target === b;
   return (
     (edge.source === a && edge.target === b) ||
     (edge.source === b && edge.target === a)
@@ -35,22 +35,22 @@ export function validateEdgeDraft(
   }
 
   if (isLoop(draft)) {
-    if (draft.directed) {
+    if (draft.isDirected) {
       return {
         ok: false,
         message: "Петля может быть только неориентированной",
       };
     }
 
-    const otherLoopExists = edges.some(
+    const isOtherLoop = edges.some(
       (e) =>
         e.id !== ignoreEdgeId &&
-        !e.directed &&
+        !e.isDirected &&
         isLoop(e) &&
         e.source === draft.source,
     );
 
-    if (otherLoopExists) {
+    if (isOtherLoop) {
       return { ok: false, message: "На вершине может быть только одна петля" };
     }
 
@@ -60,12 +60,12 @@ export function validateEdgeDraft(
   const a = draft.source;
   const b = draft.target;
 
-  if (!draft.directed) {
-    const anyEdgeBetween = edges.some(
+  if (!draft.isDirected) {
+    const isEdgeBetween = edges.some(
       (e) => e.id !== ignoreEdgeId && touchesPairUndirected(e, a, b),
     );
 
-    if (anyEdgeBetween) {
+    if (isEdgeBetween) {
       return {
         ok: false,
         message:
@@ -76,11 +76,11 @@ export function validateEdgeDraft(
     return { ok: true };
   }
 
-  const undirectedBetween = edges.some(
+  const isUndirectedBetween = edges.some(
     (e) =>
-      e.id !== ignoreEdgeId && !e.directed && touchesPairUndirected(e, a, b),
+      e.id !== ignoreEdgeId && !e.isDirected && touchesPairUndirected(e, a, b),
   );
-  if (undirectedBetween) {
+  if (isUndirectedBetween) {
     return {
       ok: false,
       message:
@@ -88,10 +88,10 @@ export function validateEdgeDraft(
     };
   }
 
-  const sameDirectionExists = edges.some(
-    (e) => e.id !== ignoreEdgeId && e.directed && connectsPair(e, a, b),
+  const isSameDir = edges.some(
+    (e) => e.id !== ignoreEdgeId && e.isDirected && connectsPair(e, a, b),
   );
-  if (sameDirectionExists) {
+  if (isSameDir) {
     return { ok: false, message: "Такая дуга уже существует" };
   }
 

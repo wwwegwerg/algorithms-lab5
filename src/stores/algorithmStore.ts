@@ -21,18 +21,19 @@ type AlgorithmActions = {
 
   setSteps: (steps: OverlayState[]) => void;
   reset: () => void;
+  resetPlayback: () => void;
 
   nextStep: () => void;
   prevStep: () => void;
 
-  setPlaying: (playing: boolean) => void;
+  setPlaying: (isPlaying: boolean) => void;
   setPlayIntervalMs: (ms: number) => void;
 
   setError: (message: string | null) => void;
 };
 
 const initialState: AlgorithmState = {
-  algorithmId: "bfs",
+  algorithmId: "BFS",
   startNodeId: null,
 
   steps: [],
@@ -50,13 +51,21 @@ export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
     ...initialState,
 
     setAlgorithmId: (id) =>
-      set({ algorithmId: id, lastError: null, isPlaying: false }),
+      set({
+        algorithmId: id,
+        steps: [],
+        stepIndex: 0,
+        lastError: null,
+        isPlaying: false,
+      }),
     setStartNodeId: (id) =>
       set({ startNodeId: id, lastError: null, isPlaying: false }),
 
     setSteps: (steps) =>
       set({ steps, stepIndex: 0, lastError: null, isPlaying: false }),
     reset: () => set({ ...initialState }),
+    resetPlayback: () =>
+      set({ stepIndex: 0, lastError: null, isPlaying: false }),
 
     nextStep: () =>
       set((s) => ({
@@ -64,7 +73,7 @@ export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
       })),
     prevStep: () => set((s) => ({ stepIndex: Math.max(0, s.stepIndex - 1) })),
 
-    setPlaying: (playing) => set({ isPlaying: playing }),
+    setPlaying: (isPlaying) => set({ isPlaying }),
     setPlayIntervalMs: (ms) => set({ playIntervalMs: ms }),
 
     setError: (message) =>

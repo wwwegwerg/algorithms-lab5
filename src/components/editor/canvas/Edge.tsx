@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { EdgeId, GraphEdge } from "@/core/graph/types";
+import type { EdgeId, EditorMode, GraphEdge } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
 export type Point = { x: number; y: number };
@@ -8,11 +8,11 @@ export type EdgeProps =
   | {
       variant: "edge";
       edge: GraphEdge;
+      mode: EditorMode;
       d: string;
       labelPoint: Point | null;
-      selected: boolean;
-      enableHoverOutline?: boolean;
-      hoverTone?: "primary" | "destructive";
+      isSelected: boolean;
+      isAlgorithmActive: boolean;
       onPointerDown: (
         id: EdgeId,
         e: React.PointerEvent<SVGPathElement>,
@@ -39,27 +39,23 @@ function EdgeInner(props: EdgeProps) {
   const {
     edge,
     d,
+    mode,
     labelPoint,
-    selected,
-    enableHoverOutline,
-    hoverTone,
+    isSelected,
+    isAlgorithmActive,
     onPointerDown,
     onDoubleClick,
   } = props;
 
-  const label = edge.weight === undefined ? "" : String(edge.weight);
-
-  const hoverable = !!enableHoverOutline && !selected;
-  const hoverIsDestructive = hoverTone === "destructive";
+  const isHoverable = mode === "select" || mode === "delete";
+  const isHighlighted = isAlgorithmActive || isSelected;
 
   return (
-    <g className={cn(enableHoverOutline && "group")}>
+    <g className={cn(isHoverable && "group cursor-pointer")}>
+      {/* hitbox */}
       <path
         d={d}
-        className={cn(
-          "fill-none stroke-transparent",
-          enableHoverOutline && "cursor-pointer",
-        )}
+        className={cn("fill-none stroke-transparent")}
         strokeWidth={14}
         pointerEvents="stroke"
         onPointerDown={(e) => onPointerDown(edge.id, e)}
@@ -68,35 +64,38 @@ function EdgeInner(props: EdgeProps) {
         }
       />
 
-      {hoverable && (
+      {/* main path */}
+      <path
+        d={d}
+        className={cn(
+          "fill-none stroke-muted-foreground transition-colors",
+          isHighlighted && "stroke-primary",
+          mode === "delete"
+            ? "group-hover:stroke-destructive"
+            : "group-hover:stroke-primary",
+        )}
+        strokeWidth={2}
+        markerEnd={edge.isDirected ? "url(#arrow-context)" : undefined}
+        pointerEvents="none"
+      />
+
+      {/* halo */}
+      {(isHoverable || isHighlighted) && (
         <path
           d={d}
           className={cn(
             "fill-none opacity-0 transition-opacity group-hover:opacity-100",
-            hoverIsDestructive ? "stroke-destructive/35" : "stroke-primary/35",
+            isHighlighted && "opacity-100",
+            mode === "delete" ? "stroke-destructive/35" : "stroke-primary/35",
           )}
           strokeWidth={7}
-          markerEnd={edge.directed ? "url(#arrow-context-hover)" : undefined}
+          markerEnd={edge.isDirected ? "url(#arrow-context-hover)" : undefined}
           pointerEvents="none"
         />
       )}
 
-      <path
-        d={d}
-        className={cn(
-          "fill-none",
-          selected ? "stroke-primary" : "stroke-muted-foreground",
-          hoverable &&
-            (hoverIsDestructive
-              ? "group-hover:stroke-destructive"
-              : "group-hover:stroke-primary"),
-        )}
-        strokeWidth={2}
-        markerEnd={edge.directed ? "url(#arrow-context)" : undefined}
-        pointerEvents="none"
-      />
-
-      {labelPoint && label.length > 0 && (
+      {/* weight */}
+      {labelPoint && edge.weight !== undefined && (
         <text
           x={labelPoint.x}
           y={labelPoint.y}
@@ -104,7 +103,7 @@ function EdgeInner(props: EdgeProps) {
           dominantBaseline="middle"
           className="pointer-events-none fill-foreground text-xs"
         >
-          {label}
+          {edge.weight}
         </text>
       )}
     </g>

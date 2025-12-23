@@ -12,7 +12,7 @@ export type GraphEdge = {
   id: EdgeId;
   source: NodeId;
   target: NodeId;
-  directed: boolean;
+  isDirected: boolean;
   weight?: number;
 };
 

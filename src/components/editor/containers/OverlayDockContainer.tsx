@@ -13,8 +13,8 @@ export function OverlayDockContainer() {
     mode,
     selection,
     canvasCamera,
-    infoOpen,
-    helpOpen,
+    isInfoOpen,
+    isHelpOpen,
     toggleInfoOpen,
     toggleHelpOpen,
   } = useGraphUiStore(
@@ -22,8 +22,8 @@ export function OverlayDockContainer() {
       mode: s.interaction.mode,
       selection: s.interaction.selection,
       canvasCamera: s.canvasCamera,
-      infoOpen: s.infoOpen,
-      helpOpen: s.helpOpen,
+      isInfoOpen: s.isInfoOpen,
+      isHelpOpen: s.isHelpOpen,
       toggleInfoOpen: s.toggleInfoOpen,
       toggleHelpOpen: s.toggleHelpOpen,
     })),
@@ -48,8 +48,8 @@ export function OverlayDockContainer() {
       nodesCount={nodes.length}
       edgesCount={edges.length}
       camera={canvasCamera}
-      infoOpen={infoOpen}
-      helpOpen={helpOpen}
+      isInfoOpen={isInfoOpen}
+      isHelpOpen={isHelpOpen}
       onToggleInfoOpen={toggleInfoOpen}
       onToggleHelpOpen={toggleHelpOpen}
     />

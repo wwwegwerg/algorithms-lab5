@@ -46,7 +46,7 @@ function Field({
   return (
     <div className="flex items-start gap-3">
       <div className="shrink-0 text-[11px] text-white/70">{label}</div>
-      <div className="min-w-0 flex-1 text-right font-mono text-[11px] break-words whitespace-normal text-white/90">
+      <div className="min-w-0 flex-1 text-right font-mono text-[11px] wrap-break-word whitespace-normal text-white/90">
         {value}
       </div>
     </div>
@@ -142,8 +142,8 @@ export function InfoOverlay({
                     value={edge.weight === undefined ? "(none)" : edge.weight}
                   />
                   <Field
-                    label="directed"
-                    value={edge.directed ? "true" : "false"}
+                    label="isDirected"
+                    value={edge.isDirected ? "true" : "false"}
                   />
                   <Field label="source" value={edge.source} />
                   <Field label="target" value={edge.target} />

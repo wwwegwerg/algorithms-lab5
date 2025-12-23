@@ -1,3 +1,4 @@
+import { AlgorithmRunner } from "@/components/editor/containers/AlgorithmRunner";
 import { BottomToolbarContainer } from "@/components/editor/containers/BottomToolbarContainer";
 import { CameraDockContainer } from "@/components/editor/containers/CameraDockContainer";
 import { EditObjectDialog } from "@/components/editor/containers/EditObjectDialog";
@@ -10,6 +11,7 @@ export function GraphEditor() {
   return (
     <div className="relative h-dvh w-dvw overflow-hidden">
       <GraphCanvasContainer />
+      <AlgorithmRunner />
       <EditorToast />
       <MatrixDialogContainer />
       <OverlayDockContainer />

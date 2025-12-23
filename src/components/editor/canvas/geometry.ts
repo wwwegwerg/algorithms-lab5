@@ -6,7 +6,7 @@ export const NODE_R = 18;
 export type BoxSelect = {
   start: { x: number; y: number };
   end: { x: number; y: number };
-  additive: boolean;
+  isAdditive: boolean;
 };
 
 export function vecLen(dx: number, dy: number) {
@@ -45,7 +45,7 @@ export function pointInBox(
 export function edgePath(
   edge: GraphEdge,
   nodesById: Map<string, GraphNode>,
-  hasOppositeDirected: boolean,
+  isOppositeDirected: boolean,
 ) {
   const s = nodesById.get(edge.source);
   const t = nodesById.get(edge.target);
@@ -77,7 +77,7 @@ export function edgePath(
   const endX = t.x - ux * NODE_R;
   const endY = t.y - uy * NODE_R;
 
-  if (edge.directed && hasOppositeDirected) {
+  if (edge.isDirected && isOppositeDirected) {
     const px = -uy;
     const py = ux;
     const offset = 22;
@@ -94,7 +94,7 @@ export function edgePath(
 export function edgeLabelPoint(
   edge: GraphEdge,
   nodesById: Map<string, GraphNode>,
-  hasOppositeDirected: boolean,
+  isOppositeDirected: boolean,
 ) {
   const s = nodesById.get(edge.source);
   const t = nodesById.get(edge.target);
@@ -107,7 +107,7 @@ export function edgeLabelPoint(
   const mx = (s.x + t.x) / 2;
   const my = (s.y + t.y) / 2;
 
-  if (edge.directed && hasOppositeDirected) {
+  if (edge.isDirected && isOppositeDirected) {
     const dx = t.x - s.x;
     const dy = t.y - s.y;
     const dist = vecLen(dx, dy);
