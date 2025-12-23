@@ -79,8 +79,6 @@ export function AlgorithmToolbar({
   const selectedAlgorithmLabel =
     algorithmOptions.find((opt) => opt.id === algorithmId)?.label ?? null;
 
-  const isMaxFlow = algorithmId === "MAX_FLOW_FF";
-
   const selectedSourceNode = sourceNodeId
     ? (nodes.find((n) => n.id === sourceNodeId) ?? null)
     : null;
@@ -175,7 +173,7 @@ export function AlgorithmToolbar({
           </SelectContent>
         </Select>
 
-        {isMaxFlow && (
+        {(algorithmId === "MAX_FLOW_FF" || algorithmId === "DIJKSTRA") && (
           <Select
             value={sinkNodeId ?? ""}
             onValueChange={(value) => {
