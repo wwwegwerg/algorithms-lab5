@@ -79,7 +79,7 @@ export function GraphCanvasContainer() {
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.code !== "Backslash") return;
+      if (e.code !== "Backquote") return;
       if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
 
       if (isEditableTarget(e.target)) return;

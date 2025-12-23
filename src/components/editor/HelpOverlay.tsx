@@ -148,7 +148,7 @@ export function HelpOverlay({ isOpen }: HelpOverlayProps) {
             }
             value="удалить выделенное (все выбранные)"
           />
-          <Field label={<Kbd>\</Kbd>} value="переключить Graph/Algorithms" />
+          <Field label={<Kbd>`</Kbd>} value="переключить Graph/Algorithms" />
           <Field label={<Kbd>0</Kbd>} value="центрировать (0,0)" />
           <Field
             label={<Kbd>Esc</Kbd>}
