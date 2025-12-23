@@ -19,19 +19,6 @@ export type InfoOverlayProps = {
   camera: CanvasCamera | null;
 };
 
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="text-[11px] text-white/70">{label}</div>
-      <div className="min-w-0 font-mono text-[11px] text-white/90">{value}</div>
-    </div>
-  );
-}
-
-function fmt(n: number) {
-  return n.toFixed(2);
-}
-
 function Section({
   title,
   children,
@@ -47,6 +34,27 @@ function Section({
       <div className="space-y-1">{children}</div>
     </section>
   );
+}
+
+function Field({
+  label,
+  value,
+}: {
+  label: React.ReactNode;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="shrink-0 text-[11px] text-white/70">{label}</div>
+      <div className="min-w-0 flex-1 text-right font-mono text-[11px] break-words whitespace-normal text-white/90">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function fmt(n: number) {
+  return n.toFixed(2);
 }
 
 export function InfoOverlay({
@@ -68,16 +76,6 @@ export function InfoOverlay({
           <Field label="mode" value={mode} />
           <Field label="nodes" value={nodesCount} />
           <Field label="edges" value={edgesCount} />
-          <Field
-            label="selected"
-            value={
-              selection.focus
-                ? `${selection.focus.kind}: ${selection.focus.id}`
-                : "(none)"
-            }
-          />
-          <Field label="selectedNodes" value={selection.nodeIds.length} />
-          <Field label="selectedEdges" value={selection.edgeIds.length} />
         </Section>
 
         {camera && (
@@ -93,33 +91,64 @@ export function InfoOverlay({
           </>
         )}
 
-        {node && (
+        {(mode === "select" || mode == "add_node") && (
           <>
             <Separator className="bg-white/10" />
-            <Section title="Node">
-              <Field label="id" value={node.id} />
-              <Field label="label" value={node.label} />
-              <Field label="x" value={Math.round(node.x)} />
-              <Field label="y" value={Math.round(node.y)} />
+            <Section title="Selection">
+              <Field
+                label="selected"
+                value={
+                  selection.nodeIds.length + selection.edgeIds.length === 0
+                    ? "(none)"
+                    : `${selection.nodeIds.length} node(s), ${selection.edgeIds.length} edge(s)`
+                }
+              />
+              <Field
+                label="selectedNodeIds"
+                value={selection.nodeIds.join(", ")}
+              />
+              <Field
+                label="drag"
+                value={
+                  mode !== "select"
+                    ? "(n/a)"
+                    : selection.nodeIds.length > 1
+                      ? `multi (drag selected moves ${selection.nodeIds.length})`
+                      : "single"
+                }
+              />
             </Section>
           </>
         )}
 
-        {edge && (
+        {selection.focus && (
           <>
             <Separator className="bg-white/10" />
-            <Section title="Edge">
-              <Field label="id" value={edge.id} />
-              <Field
-                label="directed"
-                value={edge.directed ? "true" : "false"}
-              />
-              <Field label="source" value={edge.source} />
-              <Field label="target" value={edge.target} />
-              <Field
-                label="weight"
-                value={edge.weight === undefined ? "(none)" : edge.weight}
-              />
+            <Section title="Focus">
+              <Field label="kind" value={selection.focus.kind} />
+              {node && (
+                <>
+                  <Field label="id" value={node.id} />
+                  <Field label="label" value={node.label} />
+                  <Field label="x" value={Math.round(node.x)} />
+                  <Field label="y" value={Math.round(node.y)} />
+                </>
+              )}
+              {edge && (
+                <>
+                  <Field label="id" value={edge.id} />
+                  <Field
+                    label="weight"
+                    value={edge.weight === undefined ? "(none)" : edge.weight}
+                  />
+                  <Field
+                    label="directed"
+                    value={edge.directed ? "true" : "false"}
+                  />
+                  <Field label="source" value={edge.source} />
+                  <Field label="target" value={edge.target} />
+                </>
+              )}
             </Section>
           </>
         )}

@@ -22,20 +22,20 @@ function Section({
   );
 }
 
-function Row({
-  left,
-  right,
+function Field({
+  label,
+  value,
 }: {
-  left: React.ReactNode;
-  right: React.ReactNode;
+  label: React.ReactNode;
+  value: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-2 items-start gap-3">
-      <div className="min-w-0 font-mono text-[11px] leading-relaxed text-white/90">
-        {left}
+    <div className="flex items-start gap-3">
+      <div className="shrink-0 font-mono text-[11px] leading-relaxed text-white/90">
+        {label}
       </div>
-      <div className="min-w-0 text-right text-[11px] leading-relaxed text-white/80">
-        {right}
+      <div className="min-w-0 flex-1 text-right text-[11px] leading-relaxed break-words whitespace-normal text-white/70">
+        {value}
       </div>
     </div>
   );
@@ -43,7 +43,7 @@ function Row({
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded bg-white/10 px-1 py-0.5 font-mono text-[11px] leading-none text-white">
+    <span className="inline-flex items-center rounded bg-white/10 px-1 py-0.5 font-mono text-[11px] leading-none text-white/90">
       {children}
     </span>
   );
@@ -56,58 +56,77 @@ export function HelpOverlay({ isOpen }: HelpOverlayProps) {
     <div className="pointer-events-auto w-90 rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
       <div className="space-y-3">
         <Section title="Modes">
-          <Row left={<Kbd>select</Kbd>} right="выделение/перетаскивание" />
-          <Row
-            left={<Kbd>node</Kbd>}
-            right="клик по полотну добавляет вершину"
+          <Field label={<Kbd>select</Kbd>} value="выделение/перетаскивание" />
+          <Field
+            label={<Kbd>node</Kbd>}
+            value="клик по полотну добавляет вершину"
           />
-          <Row left={<Kbd>edge</Kbd>} right="клик по source, затем по target" />
-          <Row left={<Kbd>delete</Kbd>} right="клик по вершине/ребру удаляет" />
+          <Field
+            label={<Kbd>edge</Kbd>}
+            value="клик по source, затем по target"
+          />
+          <Field
+            label={<Kbd>delete</Kbd>}
+            value="клик по вершине/ребру удаляет"
+          />
         </Section>
         <Separator className="bg-white/10" />
         <Section title="Mouse">
-          <Row left="select: drag node" right="переместить вершину" />
-          <Row left="select: drag blank" right="прямоугольное выделение" />
-          <Row
-            left={
+          <Field label="select: drag node" value="переместить вершину" />
+          <Field label="select: drag blank" value="прямоугольное выделение" />
+          <Field
+            label={
               <>
                 <Kbd>Shift</Kbd> + select: click/drag
               </>
             }
-            right="добавить к выделению"
+            value="добавить к выделению"
           />
-          <Row left="select: click blank" right="очистить выделение" />
-          <Row left="select: double click node" right="редактировать label" />
-          <Row left="select: double click edge" right="редактировать weight" />
-          <Row
-            left={
+          <Field label="select: click blank" value="очистить выделение" />
+          <Field
+            label="select: double click node"
+            value="редактировать label"
+          />
+          <Field
+            label="select: double click edge"
+            value="редактировать weight"
+          />
+          <Field
+            label={
               <>
                 <Kbd>Space</Kbd> + drag
               </>
             }
-            right="панорамирование"
+            value="панорамирование"
           />
-          <Row left="middle mouse: drag" right="панорамирование" />
-          <Row left="scroll" right="панорамирование" />
-          <Row left="Ctrl/⌘ + scroll" right="zoom" />
-          <Row left="edge: click blank" right="отменить выбор source" />
+          <Field label="middle mouse: drag" value="панорамирование" />
+          <Field label="scroll" value="панорамирование" />
+          <Field
+            label={
+              <>
+                <Kbd>Ctrl/Cmd</Kbd> + scroll
+              </>
+            }
+            value="zoom"
+          />
+          <Field label="edge: click blank" value="отменить выбор source" />
         </Section>
         <Separator className="bg-white/10" />
         <Section title="Keyboard">
-          <Row
-            left={
+          <Field
+            label={
               <span className="inline-flex flex-wrap items-center gap-1">
                 <Kbd>Delete</Kbd>
                 <span className="text-white/60">/</span>
                 <Kbd>Backspace</Kbd>
               </span>
             }
-            right="удалить выделенное (все выбранные)"
+            value="удалить выделенное (все выбранные)"
           />
-          <Row left={<Kbd>0</Kbd>} right="центрировать (0,0)" />
-          <Row
-            left={<Kbd>Esc</Kbd>}
-            right="отменить добавление ребра (edge mode)"
+          <Field label={<Kbd>0</Kbd>} value="центрировать (0,0)" />
+          <Field
+            label={<Kbd>Esc</Kbd>}
+            value="отменить добавление ребра (edge mode)"
           />
         </Section>
       </div>

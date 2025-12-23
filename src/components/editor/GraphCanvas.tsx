@@ -55,6 +55,7 @@ export type GraphCanvasProps = {
   ) => void;
 
   onNodeDrag: (id: NodeId, x: number, y: number) => void;
+  onNodesDrag?: (updates: Array<{ id: NodeId; x: number; y: number }>) => void;
 
   onCancelEdgeDraft: () => void;
 };
@@ -78,6 +79,9 @@ const DEFAULT_SCALE = 1.2;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 60;
 
+const DRAG_THRESHOLD_PX = 4;
+const DRAG_THRESHOLD_SQ = DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX;
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -97,6 +101,7 @@ export function GraphCanvas({
   onEdgeDoubleClick,
   onBoxSelect,
   onNodeDrag,
+  onNodesDrag,
   onCancelEdgeDraft,
 }: GraphCanvasProps) {
   const ref = React.useRef<SVGSVGElement | null>(null);
@@ -116,11 +121,36 @@ export function GraphCanvas({
 
   const [panning, setPanning] = React.useState<PanState | null>(null);
 
-  const [dragging, setDragging] = React.useState<{
+  type DraggingState =
+    | {
+        kind: "single";
+        pointerId: number;
+        id: NodeId;
+        startWorld: { x: number; y: number };
+        startNode: { x: number; y: number };
+      }
+    | {
+        kind: "multi";
+        pointerId: number;
+        nodeIds: NodeId[];
+        startWorld: { x: number; y: number };
+        startPositions: Map<NodeId, { x: number; y: number }>;
+      };
+
+  type PendingNodeDrag = {
+    pointerId: number;
     id: NodeId;
-    dx: number;
-    dy: number;
-  } | null>(null);
+    startClientX: number;
+    startClientY: number;
+    startWorld: { x: number; y: number };
+    startNode: { x: number; y: number };
+    startSelectionNodeIds: NodeId[];
+    wasSelected: boolean;
+    startPositions: Map<NodeId, { x: number; y: number }>;
+  };
+
+  const [dragging, setDragging] = React.useState<DraggingState | null>(null);
+  const pendingNodeDragRef = React.useRef<PendingNodeDrag | null>(null);
   const [cursorPoint, setCursorPoint] = React.useState<{
     x: number;
     y: number;
@@ -165,6 +195,22 @@ export function GraphCanvas({
   const selectedEdgeSet = React.useMemo(() => {
     return new Set(selection.edgeIds);
   }, [selection.edgeIds]);
+
+  const applyNodePositionUpdates = React.useCallback(
+    (updates: Array<{ id: NodeId; x: number; y: number }>) => {
+      if (updates.length === 0) return;
+
+      if (onNodesDrag) {
+        onNodesDrag(updates);
+        return;
+      }
+
+      for (const u of updates) {
+        onNodeDrag(u.id, u.x, u.y);
+      }
+    },
+    [onNodeDrag, onNodesDrag],
+  );
 
   const ensureCameraInitialized = React.useCallback((el: SVGSVGElement) => {
     if (cameraInitializedRef.current) return;
@@ -271,6 +317,7 @@ export function GraphCanvas({
     const el = ref.current;
     if (!el) return;
 
+    pendingNodeDragRef.current = null;
     setDragging(null);
     setBoxSelect(null);
 
@@ -325,17 +372,55 @@ export function GraphCanvas({
 
       e.stopPropagation();
 
-      if (mode === "select" && !e.shiftKey) {
-        const node = nodesById.get(id);
-        const p = clientToWorldPoint(e.clientX, e.clientY);
-        if (node && p) {
-          setDragging({ id, dx: p.x - node.x, dy: p.y - node.y });
-        }
+      if (mode !== "select" || e.shiftKey) {
+        onNodeClick(id, e.shiftKey);
+        return;
       }
 
-      onNodeClick(id, e.shiftKey);
+      const el = ref.current;
+      if (el) {
+        el.setPointerCapture(e.pointerId);
+      }
+
+      setBoxSelect(null);
+      setDragging(null);
+
+      const node = nodesById.get(id);
+      const p = clientToWorldPoint(e.clientX, e.clientY);
+      if (!node || !p) {
+        onNodeClick(id, false);
+        return;
+      }
+
+      const startSelectionNodeIds = [...selection.nodeIds];
+      const startPositions = new Map(
+        startSelectionNodeIds.flatMap((nodeId) => {
+          const n = nodesById.get(nodeId);
+          return n ? [[nodeId, { x: n.x, y: n.y }] as const] : [];
+        }),
+      );
+
+      pendingNodeDragRef.current = {
+        pointerId: e.pointerId,
+        id,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        startWorld: p,
+        startNode: { x: node.x, y: node.y },
+        startSelectionNodeIds,
+        wasSelected: selectedNodeSet.has(id),
+        startPositions,
+      };
     },
-    [clientToWorldPoint, mode, nodesById, onNodeClick, startPan],
+    [
+      clientToWorldPoint,
+      mode,
+      nodesById,
+      onNodeClick,
+      selection.nodeIds,
+      selectedNodeSet,
+      startPan,
+    ],
   );
 
   const handleNodeDoubleClick = React.useCallback(
@@ -531,6 +616,65 @@ export function GraphCanvas({
 
         const p = clientToWorldPoint(e.clientX, e.clientY);
 
+        const pendingNodeDrag = pendingNodeDragRef.current;
+        if (pendingNodeDrag && mode === "select") {
+          const dx = e.clientX - pendingNodeDrag.startClientX;
+          const dy = e.clientY - pendingNodeDrag.startClientY;
+          const distSq = dx * dx + dy * dy;
+
+          if (distSq >= DRAG_THRESHOLD_SQ && p) {
+            const startWorld = pendingNodeDrag.startWorld;
+            const deltaX = p.x - startWorld.x;
+            const deltaY = p.y - startWorld.y;
+
+            const nodeIds = pendingNodeDrag.startSelectionNodeIds.filter(
+              (nodeId) => pendingNodeDrag.startPositions.has(nodeId),
+            );
+
+            const canGroupDrag =
+              pendingNodeDrag.wasSelected && nodeIds.length > 1;
+
+            if (canGroupDrag) {
+              const updates = nodeIds.flatMap((nodeId) => {
+                const pos = pendingNodeDrag.startPositions.get(nodeId);
+                return pos
+                  ? [{ id: nodeId, x: pos.x + deltaX, y: pos.y + deltaY }]
+                  : [];
+              });
+
+              applyNodePositionUpdates(updates);
+
+              setDragging({
+                kind: "multi",
+                pointerId: pendingNodeDrag.pointerId,
+                nodeIds,
+                startWorld,
+                startPositions: pendingNodeDrag.startPositions,
+              });
+            } else {
+              onNodeClick(pendingNodeDrag.id, false);
+              applyNodePositionUpdates([
+                {
+                  id: pendingNodeDrag.id,
+                  x: pendingNodeDrag.startNode.x + deltaX,
+                  y: pendingNodeDrag.startNode.y + deltaY,
+                },
+              ]);
+
+              setDragging({
+                kind: "single",
+                pointerId: pendingNodeDrag.pointerId,
+                id: pendingNodeDrag.id,
+                startWorld,
+                startNode: pendingNodeDrag.startNode,
+              });
+            }
+
+            pendingNodeDragRef.current = null;
+            return;
+          }
+        }
+
         if (boxSelect && p) {
           setBoxSelect({ ...boxSelect, end: p });
           return;
@@ -541,12 +685,46 @@ export function GraphCanvas({
         }
 
         if (!dragging || mode !== "select") return;
+        if (e.pointerId !== dragging.pointerId) return;
         if (!p) return;
-        onNodeDrag(dragging.id, p.x - dragging.dx, p.y - dragging.dy);
+
+        const deltaX = p.x - dragging.startWorld.x;
+        const deltaY = p.y - dragging.startWorld.y;
+
+        if (dragging.kind === "single") {
+          applyNodePositionUpdates([
+            {
+              id: dragging.id,
+              x: dragging.startNode.x + deltaX,
+              y: dragging.startNode.y + deltaY,
+            },
+          ]);
+          return;
+        }
+
+        const updates = dragging.nodeIds.flatMap((nodeId) => {
+          const pos = dragging.startPositions.get(nodeId);
+          return pos
+            ? [{ id: nodeId, x: pos.x + deltaX, y: pos.y + deltaY }]
+            : [];
+        });
+
+        applyNodePositionUpdates(updates);
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
         setPanning(null);
         setDragging(null);
+
+        const pendingNodeDrag = pendingNodeDragRef.current;
+        pendingNodeDragRef.current = null;
+
+        if (
+          pendingNodeDrag &&
+          mode === "select" &&
+          e.pointerId === pendingNodeDrag.pointerId
+        ) {
+          onNodeClick(pendingNodeDrag.id, false);
+        }
 
         if (!boxSelect) return;
 
@@ -573,11 +751,13 @@ export function GraphCanvas({
         setBoxSelect(null);
       }}
       onPointerLeave={() => {
+        pendingNodeDragRef.current = null;
         setPanning(null);
         setDragging(null);
         setBoxSelect(null);
       }}
       onPointerCancel={() => {
+        pendingNodeDragRef.current = null;
         setPanning(null);
         setDragging(null);
         setBoxSelect(null);
@@ -586,6 +766,8 @@ export function GraphCanvas({
         // PointerEvent.button: 0 = left (LMB), 1 = middle (MMB), 2 = right (RMB).
         if (e.button !== 0 && e.button !== 1) return;
         if (e.target !== e.currentTarget) return;
+
+        pendingNodeDragRef.current = null;
 
         if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
           e.preventDefault();

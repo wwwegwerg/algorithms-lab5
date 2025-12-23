@@ -28,6 +28,7 @@ type GraphDataActions = {
     id: NodeId,
     patch: Partial<Pick<GraphNode, "label" | "x" | "y">>,
   ) => void;
+  updateNodes: (patches: Array<{ id: NodeId; x: number; y: number }>) => void;
   deleteNode: (id: NodeId) => void;
 
   addEdge: (draft: {
@@ -128,6 +129,19 @@ export const useGraphDataStore = create<GraphDataState & GraphDataActions>()(
         set((s) => ({
           nodes: s.nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
         })),
+
+      updateNodes: (patches) =>
+        set((s) => {
+          const patchById = new Map(patches.map((p) => [p.id, p] as const));
+
+          return {
+            nodes: s.nodes.map((n) => {
+              const patch = patchById.get(n.id);
+              if (!patch) return n;
+              return { ...n, x: patch.x, y: patch.y };
+            }),
+          };
+        }),
 
       deleteNode: (id) =>
         set((s) => {

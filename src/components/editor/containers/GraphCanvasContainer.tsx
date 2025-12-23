@@ -7,11 +7,12 @@ import { useGraphDataStore } from "@/stores/graphDataStore";
 import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export function GraphCanvasContainer() {
-  const { nodes, edges, updateNode } = useGraphDataStore(
+  const { nodes, edges, updateNode, updateNodes } = useGraphDataStore(
     useShallow((s) => ({
       nodes: s.nodes,
       edges: s.edges,
       updateNode: s.updateNode,
+      updateNodes: s.updateNodes,
     })),
   );
 
@@ -134,6 +135,13 @@ export function GraphCanvasContainer() {
     [updateNode],
   );
 
+  const onNodesDrag = React.useCallback(
+    (updates: Array<{ id: NodeId; x: number; y: number }>) => {
+      updateNodes(updates);
+    },
+    [updateNodes],
+  );
+
   const onNodeDoubleClick = React.useCallback(
     (id: NodeId) => {
       if (mode !== "select") return;
@@ -162,6 +170,7 @@ export function GraphCanvasContainer() {
       onNodeClick={onNodeClick}
       onEdgeClick={onEdgeClick}
       onNodeDrag={onNodeDrag}
+      onNodesDrag={onNodesDrag}
       onNodeDoubleClick={onNodeDoubleClick}
       onEdgeDoubleClick={onEdgeDoubleClick}
       onBoxSelect={applyBoxSelection}
