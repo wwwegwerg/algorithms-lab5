@@ -6,6 +6,8 @@ export type OverlayState = {
   visitedNodeIds: NodeId[];
   frontierNodeIds: NodeId[];
   activeEdgeId?: EdgeId;
+
+  flowByEdgeId?: Record<EdgeId, number>;
 };
 
 export type AlgorithmSupport = { ok: true } | { ok: false; message: string };
@@ -13,7 +15,8 @@ export type AlgorithmSupport = { ok: true } | { ok: false; message: string };
 export type AlgorithmContext = {
   nodes: readonly GraphNode[];
   edges: readonly GraphEdge[];
-  startNodeId: NodeId;
+  sourceNodeId: NodeId;
+  sinkNodeId?: NodeId;
 };
 
 export type GraphAlgorithm = {

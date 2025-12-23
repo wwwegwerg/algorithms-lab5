@@ -45,13 +45,15 @@ export function BottomToolbarContainer() {
 
   const {
     algorithmId,
-    startNodeId,
+    sourceNodeId,
+    sinkNodeId,
     playIntervalMs,
     isPlaying,
     steps,
     stepIndex,
     setAlgorithmId,
-    setStartNodeId,
+    setSourceNodeId,
+    setSinkNodeId,
     setPlayIntervalMs,
     setPlaying,
     setSteps,
@@ -61,13 +63,15 @@ export function BottomToolbarContainer() {
   } = useAlgorithmStore(
     useShallow((s) => ({
       algorithmId: s.algorithmId,
-      startNodeId: s.startNodeId,
+      sourceNodeId: s.sourceNodeId,
+      sinkNodeId: s.sinkNodeId,
       playIntervalMs: s.playIntervalMs,
       isPlaying: s.isPlaying,
       steps: s.steps,
       stepIndex: s.stepIndex,
       setAlgorithmId: s.setAlgorithmId,
-      setStartNodeId: s.setStartNodeId,
+      setSourceNodeId: s.setSourceNodeId,
+      setSinkNodeId: s.setSinkNodeId,
       setPlayIntervalMs: s.setPlayIntervalMs,
       setPlaying: s.setPlaying,
       setSteps: s.setSteps,
@@ -152,15 +156,16 @@ export function BottomToolbarContainer() {
       return;
     }
 
-    if (!startNodeId) {
-      setError("Выберите стартовую вершину");
+    if (!sourceNodeId) {
+      setError("Выберите source");
       return;
     }
 
     const ctx: AlgorithmContext = {
       nodes,
       edges,
-      startNodeId,
+      sourceNodeId,
+      sinkNodeId: sinkNodeId ?? undefined,
     };
 
     const supported = algorithm.supports(ctx);
@@ -177,7 +182,16 @@ export function BottomToolbarContainer() {
 
     clearError();
     setSteps(nextSteps);
-  }, [algorithmId, clearError, edges, nodes, setError, setSteps, startNodeId]);
+  }, [
+    algorithmId,
+    clearError,
+    edges,
+    nodes,
+    setError,
+    setSteps,
+    sinkNodeId,
+    sourceNodeId,
+  ]);
 
   const onToggleMatrixDialogOpen = React.useCallback(() => {
     setMatrixDialogKind(matrixDialogKind === "none" ? "adjacency" : "none");
@@ -205,8 +219,10 @@ export function BottomToolbarContainer() {
         algorithmId,
         onChangeAlgorithmId: setAlgorithmId,
         nodes,
-        startNodeId,
-        onChangeStartNodeId: setStartNodeId,
+        sourceNodeId,
+        onChangeSourceNodeId: setSourceNodeId,
+        sinkNodeId,
+        onChangeSinkNodeId: setSinkNodeId,
         playIntervalMs,
         onChangePlayIntervalMs: setPlayIntervalMs,
         isPlaying,

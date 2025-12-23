@@ -984,6 +984,10 @@ export function GraphCanvas({
           if (!d) return null;
 
           const labelPoint = edgeGeometry.labelPointById.get(e.id) ?? null;
+          const labelText =
+            algorithmOverlay?.flowByEdgeId && e.weight !== undefined
+              ? `${algorithmOverlay.flowByEdgeId[e.id] ?? 0}/${e.weight}`
+              : null;
 
           return (
             <Edge
@@ -993,6 +997,7 @@ export function GraphCanvas({
               mode={mode}
               d={d}
               labelPoint={labelPoint}
+              labelText={labelText}
               isSelected={selectedEdgeSet.has(e.id)}
               isAlgorithmActive={algorithmActiveEdgeId === e.id}
               onPointerDown={handleEdgePointerDown}

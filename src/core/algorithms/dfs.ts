@@ -21,9 +21,9 @@ function neighborsOf(nodeId: NodeId, edges: readonly GraphEdge[]) {
   return out;
 }
 
-export const bfsAlgorithm: GraphAlgorithm = {
-  id: "BFS",
-  label: "BFS (обход в ширину)",
+export const dfsAlgorithm: GraphAlgorithm = {
+  id: "DFS",
+  label: "DFS (обход в глубину)",
   supports: ({ nodes, sourceNodeId }) => {
     const isPresent = nodes.some((n) => n.id === sourceNodeId);
     return isPresent
@@ -33,21 +33,21 @@ export const bfsAlgorithm: GraphAlgorithm = {
   run: ({ edges, sourceNodeId }) => {
     const visited = new Set<NodeId>();
     const order: NodeId[] = [];
-    const queue: NodeId[] = [];
+    const stack: NodeId[] = [];
     const steps = [];
 
-    queue.push(sourceNodeId);
+    stack.push(sourceNodeId);
     visited.add(sourceNodeId);
 
     steps.push({
       message: `Старт: ${sourceNodeId}`,
       activeNodeIds: [],
       visitedNodeIds: Array.from(visited),
-      frontierNodeIds: [...queue],
+      frontierNodeIds: [...stack],
     });
 
-    while (queue.length > 0) {
-      const node = queue.shift();
+    while (stack.length > 0) {
+      const node = stack.pop();
       if (!node) break;
 
       order.push(node);
@@ -56,7 +56,7 @@ export const bfsAlgorithm: GraphAlgorithm = {
         message: `Обрабатываем вершину: ${node}`,
         activeNodeIds: [node],
         visitedNodeIds: Array.from(visited),
-        frontierNodeIds: [...queue],
+        frontierNodeIds: [...stack],
       });
 
       const neighbors = neighborsOf(node, edges);
@@ -65,20 +65,20 @@ export const bfsAlgorithm: GraphAlgorithm = {
           message: `Проверяем ребро ${viaEdgeId}`,
           activeNodeIds: [node],
           visitedNodeIds: Array.from(visited),
-          frontierNodeIds: [...queue],
+          frontierNodeIds: [...stack],
           activeEdgeId: viaEdgeId,
         });
 
         if (visited.has(neighbor)) continue;
 
         visited.add(neighbor);
-        queue.push(neighbor);
+        stack.push(neighbor);
 
         steps.push({
-          message: `Добавили в очередь: ${neighbor}`,
+          message: `Добавили в стек: ${neighbor}`,
           activeNodeIds: [node],
           visitedNodeIds: Array.from(visited),
-          frontierNodeIds: [...queue],
+          frontierNodeIds: [...stack],
           activeEdgeId: viaEdgeId,
         });
       }

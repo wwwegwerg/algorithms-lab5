@@ -7,15 +7,7 @@ function hasNode(nodes: readonly GraphNode[], id: NodeId) {
   return nodes.some((n) => n.id === id);
 }
 
-function connectsPair(edge: GraphEdge, a: NodeId, b: NodeId) {
-  if (edge.isDirected) return edge.source === a && edge.target === b;
-  return (
-    (edge.source === a && edge.target === b) ||
-    (edge.source === b && edge.target === a)
-  );
-}
-
-function touchesPairUndirected(edge: GraphEdge, a: NodeId, b: NodeId) {
+function touchesPair(edge: GraphEdge, a: NodeId, b: NodeId) {
   return (
     (edge.source === a && edge.target === b) ||
     (edge.source === b && edge.target === a)
@@ -57,30 +49,35 @@ export function validateEdgeDraft(
     return { ok: true };
   }
 
-  const a = draft.source;
-  const b = draft.target;
+  const isTouching = (e: GraphEdge) =>
+    e.id !== ignoreEdgeId &&
+    !isLoop(e) &&
+    touchesPair(e, draft.source, draft.target);
 
   if (!draft.isDirected) {
-    const isEdgeBetween = edges.some(
-      (e) => e.id !== ignoreEdgeId && touchesPairUndirected(e, a, b),
+    const isUndirectedExists = edges.some(
+      (e) => isTouching(e) && !e.isDirected,
     );
-
-    if (isEdgeBetween) {
+    if (isUndirectedExists) {
       return {
         ok: false,
-        message:
-          "Между двумя вершинами может быть только одно ребро или пара взаимных дуг",
+        message: "Между двумя вершинами может быть только одно ребро",
+      };
+    }
+
+    const isDirectedExists = edges.some((e) => isTouching(e) && e.isDirected);
+    if (isDirectedExists) {
+      return {
+        ok: false,
+        message: "Нельзя добавить ребро: между вершинами уже есть дуга",
       };
     }
 
     return { ok: true };
   }
 
-  const isUndirectedBetween = edges.some(
-    (e) =>
-      e.id !== ignoreEdgeId && !e.isDirected && touchesPairUndirected(e, a, b),
-  );
-  if (isUndirectedBetween) {
+  const isUndirectedExists = edges.some((e) => isTouching(e) && !e.isDirected);
+  if (isUndirectedExists) {
     return {
       ok: false,
       message:
@@ -88,10 +85,14 @@ export function validateEdgeDraft(
     };
   }
 
-  const isSameDir = edges.some(
-    (e) => e.id !== ignoreEdgeId && e.isDirected && connectsPair(e, a, b),
+  const isSameDirectionExists = edges.some(
+    (e) =>
+      e.id !== ignoreEdgeId &&
+      e.isDirected &&
+      e.source === draft.source &&
+      e.target === draft.target,
   );
-  if (isSameDir) {
+  if (isSameDirectionExists) {
     return { ok: false, message: "Такая дуга уже существует" };
   }
 

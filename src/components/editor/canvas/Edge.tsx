@@ -11,6 +11,7 @@ export type EdgeProps =
       mode: EditorMode;
       d: string;
       labelPoint: Point | null;
+      labelText?: string | null;
       isSelected: boolean;
       isAlgorithmActive: boolean;
       onPointerDown: (
@@ -41,6 +42,7 @@ function EdgeInner(props: EdgeProps) {
     d,
     mode,
     labelPoint,
+    labelText,
     isSelected,
     isAlgorithmActive,
     onPointerDown,
@@ -49,6 +51,9 @@ function EdgeInner(props: EdgeProps) {
 
   const isHoverable = mode === "select" || mode === "delete";
   const isHighlighted = isAlgorithmActive || isSelected;
+
+  const label =
+    labelText ?? (edge.weight === undefined ? null : String(edge.weight));
 
   return (
     <g className={cn(isHoverable && "group cursor-pointer")}>
@@ -94,8 +99,8 @@ function EdgeInner(props: EdgeProps) {
         />
       )}
 
-      {/* weight */}
-      {labelPoint && edge.weight !== undefined && (
+      {/* label */}
+      {labelPoint && label && (
         <text
           x={labelPoint.x}
           y={labelPoint.y}
@@ -103,7 +108,7 @@ function EdgeInner(props: EdgeProps) {
           dominantBaseline="middle"
           className="pointer-events-none fill-foreground text-xs"
         >
-          {edge.weight}
+          {label}
         </text>
       )}
     </g>

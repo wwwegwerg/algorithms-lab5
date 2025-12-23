@@ -56,17 +56,36 @@ export function HelpOverlay({ isOpen }: HelpOverlayProps) {
     <div className="w-90 rounded-lg bg-black/60 px-3 py-2 text-xs text-white shadow-lg ring-1 ring-white/10 backdrop-blur">
       <div className="space-y-3">
         <Section title="Modes">
-          <Field label={<Kbd>select</Kbd>} value="выделение/перетаскивание" />
           <Field
-            label={<Kbd>node</Kbd>}
+            label={
+              <>
+                <Kbd>select</Kbd>/<Kbd>1</Kbd>
+              </>
+            }
+            value="выделение/перетаскивание"
+          />
+          <Field
+            label={
+              <>
+                <Kbd>add_node</Kbd>/<Kbd>2</Kbd>
+              </>
+            }
             value="клик по полотну добавляет вершину"
           />
           <Field
-            label={<Kbd>edge</Kbd>}
+            label={
+              <>
+                <Kbd>add_edge</Kbd>/<Kbd>3</Kbd>
+              </>
+            }
             value="клик по source, затем по target"
           />
           <Field
-            label={<Kbd>delete</Kbd>}
+            label={
+              <>
+                <Kbd>delete</Kbd>/<Kbd>4</Kbd>
+              </>
+            }
             value="клик по вершине/ребру удаляет"
           />
         </Section>
@@ -115,14 +134,21 @@ export function HelpOverlay({ isOpen }: HelpOverlayProps) {
         <Section title="Keyboard">
           <Field
             label={
-              <span className="inline-flex flex-wrap items-center gap-1">
-                <Kbd>Delete</Kbd>
-                <span className="text-white/60">/</span>
-                <Kbd>Backspace</Kbd>
-              </span>
+              <>
+                <Kbd>3</Kbd> в режиме <Kbd>add_edge</Kbd>
+              </>
+            }
+            value="переключить directed/undirected"
+          />
+          <Field
+            label={
+              <>
+                <Kbd>Delete</Kbd>/<Kbd>Backspace</Kbd>
+              </>
             }
             value="удалить выделенное (все выбранные)"
           />
+          <Field label={<Kbd>\</Kbd>} value="переключить Graph/Algorithms" />
           <Field label={<Kbd>0</Kbd>} value="центрировать (0,0)" />
           <Field
             label={<Kbd>Esc</Kbd>}

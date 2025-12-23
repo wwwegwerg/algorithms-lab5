@@ -33,8 +33,10 @@ export type AlgorithmToolbarProps = {
   onChangeAlgorithmId: (id: string) => void;
 
   nodes: readonly GraphNode[];
-  startNodeId: string | null;
-  onChangeStartNodeId: (id: string | null) => void;
+  sourceNodeId: string | null;
+  onChangeSourceNodeId: (id: string | null) => void;
+  sinkNodeId: string | null;
+  onChangeSinkNodeId: (id: string | null) => void;
 
   playIntervalMs: number;
   onChangePlayIntervalMs: (ms: number) => void;
@@ -56,8 +58,10 @@ export function AlgorithmToolbar({
   algorithmId,
   onChangeAlgorithmId,
   nodes,
-  startNodeId,
-  onChangeStartNodeId,
+  sourceNodeId,
+  onChangeSourceNodeId,
+  sinkNodeId,
+  onChangeSinkNodeId,
   playIntervalMs,
   onChangePlayIntervalMs,
   isPlaying,
@@ -72,20 +76,37 @@ export function AlgorithmToolbar({
   const selectedAlgorithmLabel =
     algorithmOptions.find((opt) => opt.id === algorithmId)?.label ?? null;
 
-  const selectedStartNode = startNodeId
-    ? (nodes.find((n) => n.id === startNodeId) ?? null)
+  const isMaxFlow = algorithmId === "MAX_FLOW_FF";
+
+  const selectedSourceNode = sourceNodeId
+    ? (nodes.find((n) => n.id === sourceNodeId) ?? null)
     : null;
 
-  const selectedStartNodeLabel = selectedStartNode
-    ? selectedStartNode.label || selectedStartNode.id
+  const selectedSourceNodeLabel = selectedSourceNode
+    ? selectedSourceNode.label || selectedSourceNode.id
+    : null;
+
+  const selectedSinkNode = sinkNodeId
+    ? (nodes.find((n) => n.id === sinkNodeId) ?? null)
+    : null;
+
+  const selectedSinkNodeLabel = selectedSinkNode
+    ? selectedSinkNode.label || selectedSinkNode.id
     : null;
 
   React.useEffect(() => {
-    if (!startNodeId) return;
+    if (!sourceNodeId) return;
 
-    const isPresent = nodes.some((n) => n.id === startNodeId);
-    if (!isPresent) onChangeStartNodeId(null);
-  }, [nodes, onChangeStartNodeId, startNodeId]);
+    const isPresent = nodes.some((n) => n.id === sourceNodeId);
+    if (!isPresent) onChangeSourceNodeId(null);
+  }, [nodes, onChangeSourceNodeId, sourceNodeId]);
+
+  React.useEffect(() => {
+    if (!sinkNodeId) return;
+
+    const isPresent = nodes.some((n) => n.id === sinkNodeId);
+    if (!isPresent) onChangeSinkNodeId(null);
+  }, [nodes, onChangeSinkNodeId, sinkNodeId]);
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 p-3">
@@ -126,17 +147,17 @@ export function AlgorithmToolbar({
         </Select>
 
         <Select
-          value={startNodeId ?? ""}
+          value={sourceNodeId ?? ""}
           onValueChange={(value) => {
             const next = typeof value === "string" ? value : "";
-            onChangeStartNodeId(next.length === 0 ? null : next);
+            onChangeSourceNodeId(next.length === 0 ? null : next);
           }}
         >
-          <SelectTrigger size="sm" aria-label="Start node">
-            {selectedStartNodeLabel ? (
-              <span>{selectedStartNodeLabel}</span>
+          <SelectTrigger size="sm" aria-label="Source">
+            {selectedSourceNodeLabel ? (
+              <span>{selectedSourceNodeLabel}</span>
             ) : (
-              <span className="text-muted-foreground">Start node</span>
+              <span className="text-muted-foreground">Source</span>
             )}
           </SelectTrigger>
           <SelectContent className="w-max min-w-44">
@@ -149,6 +170,33 @@ export function AlgorithmToolbar({
             </SelectGroup>
           </SelectContent>
         </Select>
+
+        {isMaxFlow && (
+          <Select
+            value={sinkNodeId ?? ""}
+            onValueChange={(value) => {
+              const next = typeof value === "string" ? value : "";
+              onChangeSinkNodeId(next.length === 0 ? null : next);
+            }}
+          >
+            <SelectTrigger size="sm" aria-label="Sink">
+              {selectedSinkNodeLabel ? (
+                <span>{selectedSinkNodeLabel}</span>
+              ) : (
+                <span className="text-muted-foreground">Sink</span>
+              )}
+            </SelectTrigger>
+            <SelectContent className="w-max min-w-44">
+              <SelectGroup>
+                {nodes.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.label || n.id}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        )}
 
         <Button size="sm" variant="outline" onClick={onRunAlgorithm}>
           Run

@@ -3,7 +3,8 @@ import type { OverlayState } from "@/core/algorithms/types";
 
 type AlgorithmState = {
   algorithmId: string;
-  startNodeId: string | null;
+  sourceNodeId: string | null;
+  sinkNodeId: string | null;
 
   steps: OverlayState[];
   stepIndex: number;
@@ -17,7 +18,8 @@ type AlgorithmState = {
 
 type AlgorithmActions = {
   setAlgorithmId: (id: string) => void;
-  setStartNodeId: (id: string | null) => void;
+  setSourceNodeId: (id: string | null) => void;
+  setSinkNodeId: (id: string | null) => void;
 
   setSteps: (steps: OverlayState[]) => void;
   reset: () => void;
@@ -34,7 +36,8 @@ type AlgorithmActions = {
 
 const initialState: AlgorithmState = {
   algorithmId: "BFS",
-  startNodeId: null,
+  sourceNodeId: null,
+  sinkNodeId: null,
 
   steps: [],
   stepIndex: 0,
@@ -58,8 +61,10 @@ export const useAlgorithmStore = create<AlgorithmState & AlgorithmActions>(
         lastError: null,
         isPlaying: false,
       }),
-    setStartNodeId: (id) =>
-      set({ startNodeId: id, lastError: null, isPlaying: false }),
+    setSourceNodeId: (id) =>
+      set({ sourceNodeId: id, lastError: null, isPlaying: false }),
+    setSinkNodeId: (id) =>
+      set({ sinkNodeId: id, lastError: null, isPlaying: false }),
 
     setSteps: (steps) =>
       set({ steps, stepIndex: 0, lastError: null, isPlaying: false }),
