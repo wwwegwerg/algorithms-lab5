@@ -42,7 +42,8 @@ export function EditorToast() {
 
   React.useEffect(() => {
     const EXIT_MS = 200;
-    const DURATION_MS = kind === "error" ? 4000 : 1200;
+    // const DURATION_MS = kind === "error" ? 4000 : 1200;
+    const DURATION_MS = 4000;
 
     if (!message || !messageKey) {
       setIsToastOpen(false);

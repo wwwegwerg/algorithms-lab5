@@ -104,7 +104,7 @@ function reconstructPath(
   const nodes: NodeId[] = [];
 
   let cur: NodeId | null = sink;
-  while (cur) {
+  while (cur !== null) {
     nodes.push(cur);
     if (cur === src) break;
     const p = parent.get(cur);
@@ -122,6 +122,10 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
   id: MAX_FLOW_ID,
   label: "Max flow (Ford–Fulkerson, DFS)",
   supports: ({ nodes, edges, sourceNodeId, sinkNodeId }) => {
+    if (!sourceNodeId) {
+      return { ok: false, message: "Выберите source" };
+    }
+
     if (!sinkNodeId) {
       return { ok: false, message: "Выберите sink" };
     }
@@ -157,12 +161,64 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
       if (!Number.isFinite(e.weight) || e.weight <= 0) {
         return { ok: false, message: "Capacity должна быть > 0" };
       }
+
+      if (!Number.isInteger(e.weight)) {
+        return { ok: false, message: "Capacity должна быть целым числом" };
+      }
     }
 
     return { ok: true };
   },
   run: ({ edges, sourceNodeId, sinkNodeId }) => {
-    if (!sinkNodeId) return [];
+    if (!sourceNodeId) {
+      return [
+        {
+          message: "Ошибка: пустой id source",
+          activeNodeIds: [],
+          visitedNodeIds: [],
+          frontierNodeIds: [],
+          flowByEdgeId: {},
+        },
+      ];
+    }
+
+    if (!sinkNodeId) {
+      return [
+        {
+          message: "Ошибка: пустой id sink",
+          activeNodeIds: [],
+          visitedNodeIds: [],
+          frontierNodeIds: [],
+          flowByEdgeId: {},
+        },
+      ];
+    }
+
+    for (const e of edges) {
+      if (e.weight === undefined) {
+        return [
+          {
+            message: `Ошибка: пустой weight у ребра ${e.id}`,
+            activeNodeIds: [],
+            visitedNodeIds: [],
+            frontierNodeIds: [],
+            flowByEdgeId: {},
+          },
+        ];
+      }
+
+      if (!Number.isInteger(e.weight)) {
+        return [
+          {
+            message: `Ошибка: weight у ребра ${e.id} должен быть целым числом`,
+            activeNodeIds: [],
+            visitedNodeIds: [],
+            frontierNodeIds: [],
+            flowByEdgeId: {},
+          },
+        ];
+      }
+    }
 
     const flow: Record<EdgeId, number> = {};
     edges.forEach((e) => {

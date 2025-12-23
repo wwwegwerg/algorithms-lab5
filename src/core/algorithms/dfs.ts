@@ -25,12 +25,27 @@ export const dfsAlgorithm: GraphAlgorithm = {
   id: "DFS",
   label: "DFS (обход в глубину)",
   supports: ({ nodes, sourceNodeId }) => {
+    if (!sourceNodeId) {
+      return { ok: false, message: "Выберите стартовую вершину" };
+    }
+
     const isPresent = nodes.some((n) => n.id === sourceNodeId);
     return isPresent
       ? { ok: true }
       : { ok: false, message: "Стартовая вершина не найдена" };
   },
   run: ({ edges, sourceNodeId }) => {
+    if (!sourceNodeId) {
+      return [
+        {
+          message: "Ошибка: пустой id стартовой вершины",
+          activeNodeIds: [],
+          visitedNodeIds: [],
+          frontierNodeIds: [],
+        },
+      ];
+    }
+
     const visited = new Set<NodeId>();
     const order: NodeId[] = [];
     const stack: NodeId[] = [];
@@ -48,7 +63,16 @@ export const dfsAlgorithm: GraphAlgorithm = {
 
     while (stack.length > 0) {
       const node = stack.pop();
-      if (!node) break;
+      if (node === undefined) continue;
+      if (node === "") {
+        steps.push({
+          message: "Ошибка: пустой id вершины в стеке",
+          activeNodeIds: [],
+          visitedNodeIds: Array.from(visited),
+          frontierNodeIds: [...stack],
+        });
+        return steps;
+      }
 
       order.push(node);
 

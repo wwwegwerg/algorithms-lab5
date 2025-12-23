@@ -31,10 +31,10 @@ export function BottomToolbar({
     >
       <div className="pointer-events-auto mx-auto w-fit max-w-full">
         <Card size="sm" className="gap-0 py-0!">
-          {activeToolbar === "algorithms" ? (
-            <AlgorithmToolbar {...algorithms} />
-          ) : (
+          {activeToolbar === "graph" ? (
             <GraphToolbar {...graph} />
+          ) : (
+            <AlgorithmToolbar {...algorithms} />
           )}
         </Card>
       </div>

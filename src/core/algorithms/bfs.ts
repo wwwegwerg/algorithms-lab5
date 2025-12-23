@@ -25,12 +25,27 @@ export const bfsAlgorithm: GraphAlgorithm = {
   id: "BFS",
   label: "BFS (обход в ширину)",
   supports: ({ nodes, sourceNodeId }) => {
+    if (!sourceNodeId) {
+      return { ok: false, message: "Выберите стартовую вершину" };
+    }
+
     const isPresent = nodes.some((n) => n.id === sourceNodeId);
     return isPresent
       ? { ok: true }
       : { ok: false, message: "Стартовая вершина не найдена" };
   },
   run: ({ edges, sourceNodeId }) => {
+    if (!sourceNodeId) {
+      return [
+        {
+          message: "Ошибка: пустой id стартовой вершины",
+          activeNodeIds: [],
+          visitedNodeIds: [],
+          frontierNodeIds: [],
+        },
+      ];
+    }
+
     const visited = new Set<NodeId>();
     const order: NodeId[] = [];
     const queue: NodeId[] = [];
@@ -48,7 +63,16 @@ export const bfsAlgorithm: GraphAlgorithm = {
 
     while (queue.length > 0) {
       const node = queue.shift();
-      if (!node) break;
+      if (node === undefined) continue;
+      if (node === "") {
+        steps.push({
+          message: "Ошибка: пустой id вершины в очереди",
+          activeNodeIds: [],
+          visitedNodeIds: Array.from(visited),
+          frontierNodeIds: [...queue],
+        });
+        return steps;
+      }
 
       order.push(node);
 
