@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import type { EditorMode } from "@/core/graph/types";
 import { cn } from "@/lib/utils";
 
@@ -65,9 +64,9 @@ export function BottomToolbar({
         className,
       )}
     >
-      <div className="pointer-events-auto mx-auto flex max-w-300 flex-wrap items-end justify-center gap-2">
-        <Card size="sm" className="gap-0 py-0">
-          <div className="flex items-center gap-2 p-2">
+      <div className="pointer-events-auto mx-auto w-fit max-w-full">
+        <Card size="sm" className="gap-0 py-0!">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 p-3">
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
@@ -111,8 +110,6 @@ export function BottomToolbar({
               </Button>
             </div>
 
-            <Separator orientation="vertical" className="mx-1 h-7" />
-
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
@@ -133,12 +130,20 @@ export function BottomToolbar({
                 Undirected
               </Button>
             </div>
-          </div>
-        </Card>
 
-        <Card size="sm" className="gap-0 py-0">
-          <div className="flex items-center gap-2 p-2">
             <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant={matrixDialogKind !== "none" ? "default" : "outline"}
+                onClick={onToggleMatrixDialogOpen}
+                aria-label="Matrices"
+                aria-pressed={matrixDialogKind !== "none"}
+                aria-expanded={matrixDialogKind !== "none"}
+              >
+                <Table2Icon />
+                Matrices
+              </Button>
+
               <Button size="sm" variant="outline" onClick={onSaveJson}>
                 <DownloadIcon />
                 Save
@@ -197,22 +202,6 @@ export function BottomToolbar({
                   e.currentTarget.value = "";
                 }}
               />
-            </div>
-
-            <Separator orientation="vertical" className="mx-1 h-7" />
-
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant={matrixDialogKind !== "none" ? "default" : "outline"}
-                onClick={onToggleMatrixDialogOpen}
-                aria-label="Matrices"
-                aria-pressed={matrixDialogKind !== "none"}
-                aria-expanded={matrixDialogKind !== "none"}
-              >
-                <Table2Icon />
-                Matrices
-              </Button>
             </div>
           </div>
         </Card>
