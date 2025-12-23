@@ -246,7 +246,9 @@ export function EditObjectDialog() {
           {kind === "edge" && edge && (
             <FieldGroup className="mt-4">
               <Field data-invalid={parseWeight(edgeWeight) === null}>
-                <FieldLabel htmlFor="edge-weight-input">Weight</FieldLabel>
+                <FieldLabel htmlFor="edge-weight-input">
+                  Weight/capacity
+                </FieldLabel>
                 <FieldContent>
                   <Input
                     id="edge-weight-input"

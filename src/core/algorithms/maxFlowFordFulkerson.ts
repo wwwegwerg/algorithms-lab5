@@ -120,7 +120,7 @@ function reconstructPath(
 
 export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
   id: MAX_FLOW_ID,
-  label: "Max flow (Ford–Fulkerson, DFS)",
+  label: "Max flow (Ford–Fulkerson)",
   supports: ({ nodes, edges, sourceNodeId, sinkNodeId }) => {
     if (!sourceNodeId) {
       return { ok: false, message: "Выберите source" };
@@ -194,11 +194,23 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
       ];
     }
 
+    if (sourceNodeId === sinkNodeId) {
+      return [
+        {
+          message: "Ошибка: source и sink должны быть разными",
+          activeNodeIds: [],
+          visitedNodeIds: [],
+          frontierNodeIds: [],
+          flowByEdgeId: {},
+        },
+      ];
+    }
+
     for (const e of edges) {
-      if (e.weight === undefined) {
+      if (e.weight === undefined || !Number.isFinite(e.weight)) {
         return [
           {
-            message: `Ошибка: пустой weight у ребра ${e.id}`,
+            message: "Ошибка: не у всех ребер задана корректная capacity",
             activeNodeIds: [],
             visitedNodeIds: [],
             frontierNodeIds: [],
@@ -207,10 +219,10 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
         ];
       }
 
-      if (!Number.isInteger(e.weight)) {
+      if (!Number.isInteger(e.weight) || e.weight <= 0) {
         return [
           {
-            message: `Ошибка: weight у ребра ${e.id} должен быть целым числом`,
+            message: "Ошибка: capacity должна быть целым числом > 0",
             activeNodeIds: [],
             visitedNodeIds: [],
             frontierNodeIds: [],
@@ -240,76 +252,77 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
     );
 
     while (true) {
-      const visited = new Set<NodeId>();
-      const stack: NodeId[] = [];
-      const idxStack: number[] = [];
+      const marked = new Set<NodeId>();
+      const queue: NodeId[] = [];
       const parent = new Map<NodeId, { prev: NodeId; arc: Arc }>();
-      const options = new Map<NodeId, Arc[]>();
 
-      visited.add(sourceNodeId);
-      stack.push(sourceNodeId);
-      idxStack.push(0);
+      marked.add(sourceNodeId);
+      queue.push(sourceNodeId);
 
       pushStep(
         steps,
         {
-          message: "DFS: ищем увеличивающий путь в остаточной сети",
+          message: "Маркировка: ищем увеличивающий путь в остаточной сети",
           activeNodeIds: [sourceNodeId],
-          visitedNodeIds: Array.from(visited),
-          frontierNodeIds: [...stack],
+          visitedNodeIds: Array.from(marked),
+          frontierNodeIds: [...queue],
         },
         flow,
       );
 
-      while (stack.length > 0) {
-        const nodeId = stack[stack.length - 1]!;
-        if (nodeId === sinkNodeId) break;
-
-        const arcs = options.get(nodeId) ?? arcsFrom(nodeId, adj, flow);
-        options.set(nodeId, arcs);
-
-        const idx = idxStack[idxStack.length - 1]!;
-        if (idx >= arcs.length) {
-          stack.pop();
-          idxStack.pop();
-          continue;
-        }
-
-        const arc = arcs[idx]!;
-        idxStack[idxStack.length - 1] = idx + 1;
+      while (queue.length > 0 && !marked.has(sinkNodeId)) {
+        const nodeId = queue.shift()!;
 
         pushStep(
           steps,
           {
-            message: `DFS: пробуем ребро ${arc.edgeId} (${arc.kind}), residual=${arc.residual}`,
+            message: `Маркировка: рассматриваем вершину ${nodeId}`,
             activeNodeIds: [nodeId],
-            visitedNodeIds: Array.from(visited),
-            frontierNodeIds: [...stack],
-            activeEdgeId: arc.edgeId,
+            visitedNodeIds: Array.from(marked),
+            frontierNodeIds: [...queue],
           },
           flow,
         );
 
-        if (visited.has(arc.to)) continue;
+        const arcs = arcsFrom(nodeId, adj, flow);
+        for (const arc of arcs) {
+          const sign = arc.kind === "forward" ? "+" : "-";
 
-        visited.add(arc.to);
-        parent.set(arc.to, { prev: nodeId, arc });
-        stack.push(arc.to);
-        idxStack.push(0);
+          pushStep(
+            steps,
+            {
+              message: `Маркировка: пробуем дугу ${arc.edgeId} (${sign}), residual=${arc.residual}`,
+              activeNodeIds: [nodeId],
+              visitedNodeIds: Array.from(marked),
+              frontierNodeIds: [...queue],
+              activeEdgeId: arc.edgeId,
+            },
+            flow,
+          );
 
-        pushStep(
-          steps,
-          {
-            message: `DFS: переходим в ${arc.to}`,
-            activeNodeIds: [arc.to],
-            visitedNodeIds: Array.from(visited),
-            frontierNodeIds: [...stack],
-          },
-          flow,
-        );
+          if (marked.has(arc.to)) continue;
+
+          marked.add(arc.to);
+          parent.set(arc.to, { prev: nodeId, arc });
+          queue.push(arc.to);
+
+          pushStep(
+            steps,
+            {
+              message: `Маркировка: пометили ${arc.to} через ${nodeId} (${sign})`,
+              activeNodeIds: [arc.to],
+              visitedNodeIds: Array.from(marked),
+              frontierNodeIds: [...queue],
+              activeEdgeId: arc.edgeId,
+            },
+            flow,
+          );
+
+          if (arc.to === sinkNodeId) break;
+        }
       }
 
-      if (!visited.has(sinkNodeId)) {
+      if (!marked.has(sinkNodeId)) {
         const value = edges
           .filter((e) => e.source === sourceNodeId)
           .reduce((acc, e) => acc + (flow[e.id] ?? 0), 0);
@@ -351,9 +364,9 @@ export const maxFlowFordFulkersonAlgorithm: GraphAlgorithm = {
       pushStep(
         steps,
         {
-          message: `Найден увеличивающий путь (bottleneck=${bottleneck})`,
+          message: `Найден увеличивающий путь (K=${bottleneck})`,
           activeNodeIds: [...path.nodes],
-          visitedNodeIds: Array.from(visited),
+          visitedNodeIds: Array.from(marked),
           frontierNodeIds: [],
         },
         flow,

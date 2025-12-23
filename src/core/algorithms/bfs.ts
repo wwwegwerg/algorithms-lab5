@@ -1,4 +1,4 @@
-import type { GraphAlgorithm } from "@/core/algorithms/types";
+import type { GraphAlgorithm, OverlayState } from "@/core/algorithms/types";
 import type { GraphEdge, NodeId } from "@/core/graph/types";
 import { isLoop } from "@/core/graph/types";
 
@@ -49,7 +49,7 @@ export const bfsAlgorithm: GraphAlgorithm = {
     const visited = new Set<NodeId>();
     const order: NodeId[] = [];
     const queue: NodeId[] = [];
-    const steps = [];
+    const steps: OverlayState[] = [];
 
     queue.push(sourceNodeId);
     visited.add(sourceNodeId);
@@ -62,18 +62,7 @@ export const bfsAlgorithm: GraphAlgorithm = {
     });
 
     while (queue.length > 0) {
-      const node = queue.shift();
-      if (node === undefined) continue;
-      if (node === "") {
-        steps.push({
-          message: "Ошибка: пустой id вершины в очереди",
-          activeNodeIds: [],
-          visitedNodeIds: Array.from(visited),
-          frontierNodeIds: [...queue],
-        });
-        return steps;
-      }
-
+      const node = queue.shift()!;
       order.push(node);
 
       steps.push({
