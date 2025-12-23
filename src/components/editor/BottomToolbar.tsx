@@ -1,5 +1,7 @@
 import * as React from "react";
 import {
+  ArrowLeftFromLine,
+  ArrowRightFromLine,
   CirclePlusIcon,
   DownloadIcon,
   Eraser,
@@ -29,6 +31,10 @@ import { cn } from "@/lib/utils";
 export type BottomToolbarProps = {
   className?: string;
 
+  activeToolbar: "graph" | "algorithms";
+  onShowGraphToolbar: () => void;
+  onShowAlgorithmToolbar: () => void;
+
   mode: EditorMode;
   onChangeMode: (mode: EditorMode) => void;
 
@@ -45,6 +51,9 @@ export type BottomToolbarProps = {
 
 export function BottomToolbar({
   className,
+  activeToolbar,
+  onShowGraphToolbar,
+  onShowAlgorithmToolbar,
   mode,
   onChangeMode,
   newEdgeDirected,
@@ -56,6 +65,33 @@ export function BottomToolbar({
   onClearPersistedGraph,
 }: BottomToolbarProps) {
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  if (activeToolbar === "algorithms") {
+    return (
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 p-3",
+          className,
+        )}
+      >
+        <div className="pointer-events-auto mx-auto w-fit max-w-full">
+          <Card size="sm" className="gap-0 py-0!">
+            <div className="flex items-center justify-center p-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onShowGraphToolbar}
+                aria-label="Switch to graph toolbar"
+              >
+                <ArrowLeftFromLine />
+                Graph
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -203,6 +239,16 @@ export function BottomToolbar({
                 }}
               />
             </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onShowAlgorithmToolbar}
+              aria-label="Switch to algorithms toolbar"
+            >
+              Algorithms
+              <ArrowRightFromLine />
+            </Button>
           </div>
         </Card>
       </div>

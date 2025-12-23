@@ -17,6 +17,8 @@ function clearGraphError() {
 
 export type MatrixDialogKind = "none" | "adjacency" | "incidence";
 
+export type ActiveToolbar = "graph" | "algorithms";
+
 export type EdgeDraft = { sourceId: NodeId };
 
 export type InteractionState = {
@@ -52,6 +54,8 @@ type GraphUiState = {
   matrixDialogKind: MatrixDialogKind;
   matrixUnweightedSymbol: MatrixUnweightedSymbol;
 
+  activeToolbar: ActiveToolbar;
+
   editTarget: EditTarget | null;
 
   canvasCamera: CanvasCamera | null;
@@ -69,6 +73,9 @@ type GraphUiActions = {
   closeEditDialog: () => void;
 
   setMode: (mode: EditorMode) => void;
+
+  showGraphToolbar: () => void;
+  showAlgorithmToolbar: () => void;
 
   clearSelection: () => void;
   selectNode: (id: NodeId, additive: boolean) => void;
@@ -177,6 +184,8 @@ const initialState: GraphUiState = {
   matrixDialogKind: "none",
   matrixUnweightedSymbol: "-",
 
+  activeToolbar: "graph",
+
   editTarget: null,
 
   canvasCamera: null,
@@ -240,6 +249,16 @@ export const useGraphUiStore = create<GraphUiState & GraphUiActions>()(
           editTarget: null,
         };
       }),
+
+    showGraphToolbar: () => {
+      get().setMode("select");
+      set({ activeToolbar: "graph" });
+    },
+
+    showAlgorithmToolbar: () => {
+      get().setMode("select");
+      set({ activeToolbar: "algorithms", matrixDialogKind: "none" });
+    },
 
     clearSelection: () => {
       clearGraphError();

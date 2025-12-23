@@ -8,6 +8,9 @@ import { useGraphUiStore } from "@/stores/graphUiStore";
 
 export function BottomToolbarContainer() {
   const {
+    activeToolbar,
+    showGraphToolbar,
+    showAlgorithmToolbar,
     mode,
     setMode,
     newEdgeDirected,
@@ -16,6 +19,9 @@ export function BottomToolbarContainer() {
     setMatrixDialogKind,
   } = useGraphUiStore(
     useShallow((s) => ({
+      activeToolbar: s.activeToolbar,
+      showGraphToolbar: s.showGraphToolbar,
+      showAlgorithmToolbar: s.showAlgorithmToolbar,
       mode: s.interaction.mode,
       setMode: s.setMode,
       newEdgeDirected: s.newEdgeDirected,
@@ -69,6 +75,9 @@ export function BottomToolbarContainer() {
 
   return (
     <BottomToolbar
+      activeToolbar={activeToolbar}
+      onShowGraphToolbar={showGraphToolbar}
+      onShowAlgorithmToolbar={showAlgorithmToolbar}
       mode={mode}
       onChangeMode={setMode}
       newEdgeDirected={newEdgeDirected}
