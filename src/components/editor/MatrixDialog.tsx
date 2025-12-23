@@ -105,6 +105,14 @@ export function MatrixDialog({
                         size="sm"
                         variant={unweightedSymbol === v ? "default" : "outline"}
                         onClick={() => onChangeUnweightedSymbol(v)}
+                        aria-label={
+                          v === "-"
+                            ? "Unweighted edge symbol: dash"
+                            : v === "1"
+                              ? "Unweighted edge symbol: one"
+                              : "Unweighted edge symbol: infinity"
+                        }
+                        aria-pressed={unweightedSymbol === v}
                       >
                         {v}
                       </Button>

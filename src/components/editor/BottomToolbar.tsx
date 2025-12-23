@@ -74,6 +74,8 @@ export function BottomToolbar({
                 variant={mode === "select" ? "default" : "outline"}
                 onClick={() => onChangeMode("select")}
                 title="Select"
+                aria-label="Select mode"
+                aria-pressed={mode === "select"}
               >
                 <MousePointer2Icon />
               </Button>
@@ -81,7 +83,9 @@ export function BottomToolbar({
                 size="sm"
                 variant={mode === "add_node" ? "default" : "outline"}
                 onClick={() => onChangeMode("add_node")}
-                title="Node"
+                title="Add node"
+                aria-label="Add node mode"
+                aria-pressed={mode === "add_node"}
               >
                 <CirclePlusIcon />
               </Button>
@@ -89,7 +93,9 @@ export function BottomToolbar({
                 size="sm"
                 variant={mode === "add_edge" ? "default" : "outline"}
                 onClick={() => onChangeMode("add_edge")}
-                title="Edge"
+                title="Add edge"
+                aria-label="Add edge mode"
+                aria-pressed={mode === "add_edge"}
               >
                 <Link2Icon />
               </Button>
@@ -98,6 +104,8 @@ export function BottomToolbar({
                 variant={mode === "delete" ? "destructive" : "outline"}
                 onClick={() => onChangeMode("delete")}
                 title="Delete"
+                aria-label="Delete mode"
+                aria-pressed={mode === "delete"}
               >
                 <Eraser />
               </Button>
@@ -110,6 +118,7 @@ export function BottomToolbar({
                 size="sm"
                 variant={newEdgeDirected ? "default" : "outline"}
                 onClick={() => onChangeNewEdgeDirected(true)}
+                aria-pressed={newEdgeDirected}
               >
                 <MoveUpRight />
                 Directed
@@ -118,6 +127,7 @@ export function BottomToolbar({
                 size="sm"
                 variant={!newEdgeDirected ? "default" : "outline"}
                 onClick={() => onChangeNewEdgeDirected(false)}
+                aria-pressed={!newEdgeDirected}
               >
                 <MoveDiagonal />
                 Undirected
@@ -149,7 +159,7 @@ export function BottomToolbar({
                     <Button
                       size="sm"
                       variant="destructive"
-                      title="Очистить сохранение"
+                      title="Clear saved graph"
                     >
                       <Trash2Icon />
                       Clear canvas
@@ -198,6 +208,9 @@ export function BottomToolbar({
                   matrixDialogKind === "adjacency" ? "default" : "outline"
                 }
                 onClick={() => onToggleMatrixDialog("adjacency")}
+                aria-label="Adjacency matrix"
+                aria-pressed={matrixDialogKind === "adjacency"}
+                aria-expanded={matrixDialogKind === "adjacency"}
               >
                 <Table2Icon />
                 Adj
@@ -208,6 +221,9 @@ export function BottomToolbar({
                   matrixDialogKind === "incidence" ? "default" : "outline"
                 }
                 onClick={() => onToggleMatrixDialog("incidence")}
+                aria-label="Incidence matrix"
+                aria-pressed={matrixDialogKind === "incidence"}
+                aria-expanded={matrixDialogKind === "incidence"}
               >
                 <Table2Icon />
                 Inc

@@ -165,9 +165,13 @@ export function EditObjectDialog() {
 
           {kind === "node" && node && (
             <div className="mt-4 space-y-2">
-              <div className="text-sm font-medium">Label</div>
+              <label htmlFor="node-label-input" className="text-sm font-medium">
+                Label
+              </label>
               <Input
+                id="node-label-input"
                 value={nodeLabel}
+                aria-invalid={nodeLabel.trim().length === 0}
                 onChange={(e) => setNodeLabel(e.target.value)}
                 autoFocus
               />
@@ -176,11 +180,18 @@ export function EditObjectDialog() {
 
           {kind === "edge" && edge && (
             <div className="mt-4 space-y-2">
-              <div className="text-sm font-medium">Weight</div>
+              <label
+                htmlFor="edge-weight-input"
+                className="text-sm font-medium"
+              >
+                Weight
+              </label>
               <Input
+                id="edge-weight-input"
                 value={edgeWeight}
                 inputMode="decimal"
                 placeholder="(empty = unweighted)"
+                aria-invalid={parseWeight(edgeWeight) === null}
                 onChange={(e) => {
                   const next = normalizeMinus(e.target.value);
                   if (!WEIGHT_ALLOWED_RE.test(next)) return;

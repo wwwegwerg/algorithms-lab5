@@ -60,6 +60,9 @@ export function OverlayDock({
           variant={helpOpen ? "default" : "outline"}
           onClick={onToggleHelpOpen}
           title="Help"
+          aria-label="Help"
+          aria-pressed={helpOpen}
+          aria-expanded={helpOpen}
         >
           <KeyboardIcon />
         </Button>
@@ -69,6 +72,9 @@ export function OverlayDock({
           variant={infoOpen ? "default" : "outline"}
           onClick={onToggleInfoOpen}
           title="Info"
+          aria-label="Info"
+          aria-pressed={infoOpen}
+          aria-expanded={infoOpen}
         >
           <Bug />
         </Button>
