@@ -91,7 +91,7 @@ export function InfoOverlay({
           </>
         )}
 
-        {(mode === "select" || mode == "add_node") && (
+        {mode === "select" && (
           <>
             <Separator className="bg-white/10" />
             <Section title="Selection">

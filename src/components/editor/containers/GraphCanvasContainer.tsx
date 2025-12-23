@@ -111,7 +111,8 @@ export function GraphCanvasContainer() {
         return;
       }
 
-      selectNode(id, additive);
+      const allowAdditive = mode !== "add_node";
+      selectNode(id, allowAdditive && additive);
     },
     [addEdgeTo, deleteNode, edgeDraftSourceId, mode, selectNode, startEdgeFrom],
   );
